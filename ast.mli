@@ -11,7 +11,7 @@ type expr =
   | BoolLit of bool
   | StringLit of string
   | Id of string
-  | VectorCreate dir * expr
+  | VectorCreate of dir * expr
   | Binop of expr * op * expr
   | Unop of op * expr
   | Assign of string * expr
