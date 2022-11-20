@@ -4,7 +4,9 @@ type op = Add | Sub | Mod | Multi | Divide | Equal | Neq | Less | EqLess | Great
 
 type dir = DiagL | DiagR | Hori | Vert
 
-type typ = Int | Bool | String | Vector
+type typ = Int | Bool | String | Vector | Matrix | StructT
+
+type matrix_element = MInt of int | MString of string
 
 type expr =
     IntLit of int
@@ -15,6 +17,9 @@ type expr =
   | Binop of expr * op * expr
   | Unop of op * expr
   | Assign of string * expr
+  | MatrixCreate of (matrix_element list) list
+
+  
 
 type stmt =
     Block of stmt list
@@ -36,7 +41,7 @@ let string_of_op = function
   | Sub -> "-"
   | Mod -> "%"
   | Multi -> "*"
-  | Divide ->/"
+  | Divide -> "/"
   | Equal -> "=="
   | Neq -> "!="
   | Less -> "<"
