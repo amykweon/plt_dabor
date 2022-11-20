@@ -4,7 +4,7 @@ type op = Add | Sub | Mod | Multi | Divide | Equal | Neq | Less | EqLess | Great
 
 type dir = DiagL | DiagR | Hori | Vert
 
-type typ = Int | Bool | String | Vector | Matrix | StructT
+type typ = Int | Bool | String | Vector | Matrix | StructT of string
 
 type matrix_element = MInt of int | MString of string
 
@@ -18,8 +18,11 @@ type expr =
   | Unop of op * expr
   | Assign of string * expr
   | MatrixCreate of (matrix_element list) list
-
-  
+  | MatrixAccess of string * int * int
+  | StructDef of typ list
+  | StructCreate of expr list
+  | StructAccess of string * string
+  | DupleCreate of int * int
 
 type stmt =
     Block of stmt list
@@ -49,7 +52,7 @@ let string_of_op = function
   | Greater -> ">"
   | EqGreater -> ">="
   | And -> "&&"
-  | Or -> "||"
+  | Or -> "||" 
 
 let rec string_of_expr = function
     Literal(l) -> string_of_int l
@@ -74,7 +77,7 @@ let string_of_typ = function
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
-(*
+
 let string_of_fdecl fdecl =
   string_of_typ fdecl.rtyp ^ " " ^
   fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
@@ -82,7 +85,7 @@ let string_of_fdecl fdecl =
   String.concat "" (List.map string_of_vdecl fdecl.locals) ^
   String.concat "" (List.map string_of_stmt fdecl.body) ^
   "}\n"
-*)
+
 
 let string_of_program (vars, funcs) =
   "\n\nParsed program: \n\n" ^
