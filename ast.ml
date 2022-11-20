@@ -4,7 +4,7 @@ type op = Add | Sub | Mod | Multi | Divide | Equal | Neq | Less | EqLess | Great
 
 type dir = DiagL | DiagR | Hori | Vert
 
-type typ = Int | Bool | String | Vector | Matrix | StructT of string
+type typ = Int | Bool | String | Vector | Matrix | StructT of string | Duple
 
 type matrix_element = MInt of int | MString of string
 
@@ -19,7 +19,6 @@ type expr =
   | Assign of string * expr
   | MatrixCreate of (matrix_element list) list
   | MatrixAccess of string * int * int
-  | StructDef of typ list
   | StructCreate of expr list
   | StructAccess of string * string
   | DupleCreate of int * int
@@ -31,7 +30,9 @@ type stmt =
   | While of expr * stmt
 
 (* int x: name binding *)
-type bind = typ * string
+type bind =
+  | typ * string
+  | StructDef of typ list
 
 type program = {
    locals: bind list;
