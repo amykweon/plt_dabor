@@ -1,0 +1,4 @@
+(executable
+ (public_name plt_dabor)
+ (name main)
+ (libraries plt_dabor))
