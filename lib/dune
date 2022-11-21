@@ -3,5 +3,5 @@
 (ocamllex scanner)
 
 (library
- (name libdabor)
+ (public_name plt_dabor)
 )
