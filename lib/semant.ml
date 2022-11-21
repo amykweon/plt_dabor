@@ -1,4 +1,4 @@
-open Ast
+open Ast 
 
 module StringMap = Map.Make(String)
 let check (vdecls, stmts) = 

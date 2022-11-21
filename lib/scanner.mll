@@ -1,19 +1,21 @@
-{ open Parser
-  open Char }
+{
+        open Parser
+}
+
 let digit = ['0'-'9']
 let alpha = ['a'-'z' 'A'-'Z']
 let int = digit+
 let id = alpha (digit | alpha | '_')*
 
-let ascii_char = List.init 128 Char.chr
+let ascii_char = ['\x00' - '\x7F']
 let string = '"' ((ascii_char)* as s) '"'
 
 let newline = '\n' 
 
 rule token = parse
- [' ' '\t' '\r'] { token lexbuf }
-| newline { incr depth; token lexbuf }
-| "//" { comment lex}
+ [' ' '\t' '\r' '\n'] { token lexbuf }
+(*| newline { incr depth; token lexbuf }*)
+| "//" { comment lexbuf}
 | "vector" { VECTOR }
 | "diagonalLeft" { DIAGLEFT }
 | "diagonalRight" { DIAGRIGHT }
@@ -23,13 +25,16 @@ rule token = parse
 | "matrix_create" { MATRIX_C }
 | "move" { MOVE }
 
+
+| "Duple" {DUPLE}
+
 | "bool" { BOOL }
 | "int" { INT }
 | "true" { BLIT(true) }
 | "false" { BLIT(false) }
 
 | "string" { STRING }
-| "struct" { STRUCT }
+
 | "tuple" { TUPLE }
 
 | "if"  { IF }
@@ -67,12 +72,13 @@ rule token = parse
 | ">=" { GEQ }
 | '%'  { MOD }
 
-| int as lem { INT_LITERAL(int_of_string lem) }
+| digit+ as lem { INT_LITERAL(int_of_string lem) }
 | string { STRING_LITERAL(s) }
 | id as lem { ID(lem) }
+| string as lem{ STRUCT(lem)}
+
 | eof { EOF }
-| '"' { raise (Exceptions.UnmatchedQuotation(!lineno)) }
-| _ as illegal { raise (Exceptions.IllegalCharacter(!filename, illegal, !lineno)) }
+|  _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 
 and comment = parse
 newline { token lexbuf }
