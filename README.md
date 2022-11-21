@@ -21,5 +21,5 @@ dune build
 
 to execute the compiler, run
 ```
-dune exec
+dune exec dabor
 ```

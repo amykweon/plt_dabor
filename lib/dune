@@ -1,5 +1,4 @@
-(menhir
- (modules parser))
+(ocamlyacc parser)
 
 (ocamllex scanner)
 
