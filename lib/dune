@@ -1,2 +1,8 @@
+(menhir
+ (modules parser))
+
+(ocamllex scanner)
+
 (library
- (name plt_dabor))
+ (name libdabor)
+)
