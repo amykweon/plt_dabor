@@ -8,9 +8,9 @@ let int = digit+
 let id = alpha (digit | alpha | '_')*
 
 let ascii_char = ['\x00' - '\x7F']
-let string = '"' ((ascii_char)* as s) '"'
+let string = '"' ((ascii_char)*) '"'
 
-let newline = '\n' 
+let newline = '\n'
 
 rule token = parse
  [' ' '\t' '\r' '\n'] { token lexbuf }
@@ -49,7 +49,7 @@ rule token = parse
 
 | '.' { DOT }
 
-| '(' { LPAREN } 
+| '(' { LPAREN }
 | ')' { RPAREN }
 | '{' { LBRACE }
 | '}' { RBRACE }
@@ -73,7 +73,7 @@ rule token = parse
 | '%'  { MOD }
 
 | digit+ as lem { INT_LITERAL(int_of_string lem) }
-| string { STRING_LITERAL(s) }
+(* | string { STRING_LITERAL(string) } *)
 | id as lem { ID(lem) }
 | string as lem{ STRUCT(lem)}
 
