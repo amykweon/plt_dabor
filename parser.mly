@@ -1,12 +1,14 @@
+%{ open Ast %}
 %token DOT SEMI COLON COMMA LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK
 %token PLUS MINUS MULTIPLY DIVIDE MOD ASSIGN
 %token EQ NEQ LT LEQ GT GEQ AND OR NOT
-%token IF ELSE WHILE CONTINUE BREAK
-%token VECTOR DIAGLEFT DIAGRIGHT HORIZONTAL VERTICAL MATRIX MATRIX_C MOVE
-%token STRING STRUCT DUPLE
-%token <int> INT_LITERAL INT
-%token <bool> BLIT BOOL
-%token <string> ID STRING_LITERAL
+%token IF ELSE WHILE CONTINUE BREAK BOOL INT STRING DUPLE STRUCT
+%token VECTOR DIAGLEFT DIAGRIGHT HORIZONTAL VERTICAL MATRIX MATRIX_C MOVE TUPLE
+%token <int> INT_LITERAL 
+%token <bool> BLIT 
+%token <string> ID 
+%token <string> STRING_LITERAL
+
 %token EOF
 
 %right ASSIGN
@@ -27,7 +29,7 @@
 %%
 
 program_rule:
-   vdecl_list_rule stmt_list_rule EOF { {locals = $1; body = $2} }
+   vdecl_list_rule stmt_list_rule EOF { {locals =  $1; body =  $2} }
 
 vdecl_list_rule:
    /*nothing*/                   { [] }
@@ -67,9 +69,9 @@ stmt_rule:
 
 rest_of_list_rule:
    INT_LITERAL COMMA rest_of_list_rule                 { $1::$3 }
- | STRING_LITERAL COMMA rest_of_list_rule              { $1::$3 }
+// | STRING_LITERAL COMMA rest_of_list_rule              { $1::$3 }
  | INT_LITERAL RBRACK /* no empty lists allowed */     { $1::[] }
- | STRING_LITERAL RBRACK /* no empty lists allowed */  { $1::[] }
+// | STRING_LITERAL RBRACK /* no empty lists allowed */  { $1::[] }
 
 list_rule:
    LBRACK rest_of_list_rule { $2 }
@@ -80,18 +82,22 @@ rest_of_matrix_rule:
 
 matrix_rule:
    LBRACK rest_of_matrix_rule  { $2 }
- 
+
+/*
+TODO: id_rule bug
 id_rule:
    ID                                    { Id $1 }
  | ID DOT ID                             { StructAccess{$1, $3} }
  | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { MatrixAccess($1, $3, $5) }
+*/
 
 expr_rule:
    BLIT                                  { BoolLit $1 }
  | INT_LITERAL                           { IntLit $1 }
  | STRING_LITERAL                        { StringLit $1 }
  | ID                                    { Id $1 }
- | id_rule ASSIGN expr_rule              { Assign ($1, $3) }
+ | ID ASSIGN expr_rule              { Assign ($1, $3) }
+ // TODO: id_rule bug | id_rule ASSIGN expr_rule              { Assign ($1, $3) }
  | expr_rule PLUS expr_rule              { Binop ($1, Add, $3) }
  | expr_rule MINUS expr_rule             { Binop ($1, Sub, $3) }
  | expr_rule MULTIPLY expr_rule          { Binop ($1, Multiply, $3) }
@@ -116,6 +122,6 @@ expr_rule:
  | ID DOT ID                             { StructAccess($1, $3) }
  | MATRIX_C LPAREN matrix_rule RPAREN    { MatrixCreate($3) }
  | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { MatrixAccess($1, $3, $5) }
- | ID LBRACK id_rule RBRACK                       { MatrixAccess($1, $3) }
+ // TODO: id_rule bug | ID LBRACK id_rule RBRACK                       { MatrixAccess($1, $3) }
  | LPAREN INT_LITERAL COMMA INT_LITERAL RPAREN    { DupleCreate($2, $4) }
 

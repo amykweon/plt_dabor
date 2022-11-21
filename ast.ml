@@ -6,8 +6,6 @@ type dir = DiagL | DiagR | Hori | Vert
 
 type typ = Int | Bool | String | Vector | Matrix | StructT of string | Duple
 
-type matrix_element = MInt of int | MString of string
-
 type expr =
     IntLit of int
   | BoolLit of bool
@@ -17,9 +15,9 @@ type expr =
   | Binop of expr * op * expr
   | Unop of op * expr
   | Assign of string * expr
-  | MatrixCreate of (matrix_element list) list
+  | MatrixCreate of int list list
   | MatrixAccess of string * int * int
-  | StructCreate of expr list
+  | StructCreate of (string * expr) list
   | StructAccess of string * string
   | DupleCreate of int * int
 
@@ -29,13 +27,15 @@ type stmt =
   | If of expr * stmt * stmt
   | While of expr * stmt
 
-(* int x: name binding *)
-type bind =
-  | typ * string
-  | StructDef of typ list
+// TODO: find a way to combine StructDef and bind into decl
+type bind = typ * string
+
+type decl =
+    bind
+  | StructDef of string * bind list
 
 type program = {
-   locals: bind list;
+   locals: decl list;
    body: stmt list;
 }
 
@@ -78,17 +78,7 @@ let string_of_typ = function
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
-
-let string_of_fdecl fdecl =
-  string_of_typ fdecl.rtyp ^ " " ^
-  fdecl.fname ^ "(" ^ String.concat ", " (List.map snd fdecl.formals) ^
-  ")\n{\n" ^
-  String.concat "" (List.map string_of_vdecl fdecl.locals) ^
-  String.concat "" (List.map string_of_stmt fdecl.body) ^
-  "}\n"
-
-
-let string_of_program (vars, funcs) =
+let string_of_program fdecl =
   "\n\nParsed program: \n\n" ^
   String.concat "" (List.map string_of_vdecl fdecl.locals) ^
   String.concat "\n" (List.map string_of_stmt fdecl.body) ^
