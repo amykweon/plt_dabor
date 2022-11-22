@@ -28,8 +28,10 @@ dune exec dabor
 Seoyoung Kweon:
 - basic implementation of parser.mly, scanner.mll
 - basic implementation of ast.ml, sast.ml (struct, vector)
+
 Nicholas Greenspan:
 - basic implementation of semant.ml, test.ml
+
 Annie Song:
 - debugging on compilation error of parser.mly, scanner.mll, ast.ml
 - general system (compilation code) for code testing
