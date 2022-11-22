@@ -30,8 +30,9 @@ Seoyoung Kweon:
 - basic implementation of ast.ml, sast.ml (struct, vector)
 
 Nicholas Greenspan:
+- basic implementation of ast.ml (struct, matrix)
 - basic implementation of semant.ml, test.ml
 
 Annie Song:
-- debugging on compilation error of parser.mly, scanner.mll, ast.ml
+- debugging on compilation errors of parser.mly, scanner.mll, ast.ml
 - general system (compilation code) for code testing
