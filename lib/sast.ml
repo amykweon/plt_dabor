@@ -1,6 +1,4 @@
-(*open Ast
-*)
-type smatrix_element = SMInt of int | SMString of string
+open Ast
 
 type sexpr = typ * sx
 and sx =
@@ -12,9 +10,9 @@ and sx =
   | SBinop of sexpr * op * sexpr
   | SUnop of op * sexpr
   | SAssign of string * sexpr
-  | SMatrixCreate of (smatrix_element list) list
+  | SMatrixCreate of int list list
   | SMatrixAccess of string * int * int
-  | SStructCreate of sexpr list
+  | SStructCreate of (string * sexpr) list
   | SStructAccess of string * string
   | SDupleCreate of int * int
 
@@ -24,6 +22,7 @@ type sstmt =
   | SIf of sexpr * sstmt * sstmt
   | SWhile of sexpr * sstmt
 
+// TODO: bind to decl
 type sprogram = {
    locals: bind list;
    body: sstmt list;
