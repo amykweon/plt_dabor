@@ -4,4 +4,5 @@
 
 (install
  (section bin)
- (files (dabor.exe as dabor)))
+ (files
+  (dabor.exe as dabor)))
