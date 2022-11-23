@@ -10,9 +10,10 @@ let id = alpha (digit | alpha | '_')*
 let ascii_char = ['\x00' - '\x7F']
 let string = '"' ((ascii_char)* as s) '"'
 
+let newline = '\n' 
+
 rule token = parse
  [' ' '\t' '\r'] { token lexbuf }
-| newline { incr depth; token lexbuf }
 | "//" { comment lexbuf}
 | "vector" { VECTOR }
 | "diagonalLeft" { DIAGLEFT }
@@ -71,9 +72,7 @@ rule token = parse
 | digit+ as lem { INT_LITERAL(int_of_string lem) }
 | string { STRING_LITERAL(s) }
 | id as lem { ID(lem) }
-| '"' { raise (Exceptions.UnmatchedQuotation(!lineno)) }
-| _ as illegal { raise (Exceptions.IllegalCharacter(!filename, illegal, !lineno)) }
-
+| '"' { raise (Failure("unmatched quotation")) }
 | eof { EOF }
 |  _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
 
