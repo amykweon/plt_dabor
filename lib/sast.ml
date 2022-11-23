@@ -22,6 +22,7 @@ type sstmt =
   | SIf of sexpr * sstmt * sstmt
   | SWhile of sexpr * sstmt
 
+// TODO: bind to decl
 type sprogram = {
    locals: decl list;
    body: sstmt list;
