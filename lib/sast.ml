@@ -28,14 +28,25 @@ type sprogram = {
 }
 
 (* Pretty-printing functions *)
-let rec string_of_sexpr = function
-    SLiteral(l) -> string_of_int l
-  | SBoolLit(true) -> "true"
-  | SBoolLit(false) -> "false"
-  | SId(s) -> s
-  | SBinop(e1, o, e2) ->
-    string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2
-  | SAssign(v, e) -> v ^ " = " ^ string_of_sexpr e
+let rec string_of_sexpr (t, e) = 
+  "(" ^ string_of_typ t ^ " : " ^ (match e with
+      SIntLit(l) -> string_of_int l
+    | SBoolLit(true) -> "true"
+    | SBoolLit(false) -> "false"
+    | SStringLit(l) -> l
+    | SId(s) -> s
+    | SBinop(e1, o, e2) ->
+      string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2
+    | SUnop(o, e) -> string_of_sexpr e ^ " " ^ string_of_op o
+    | SAssign(v, e) -> v ^ " = " ^ string_of_sexpr e
+    | SVectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_sexpr num
+    | SMatrixCreate(_) -> "TODO"
+    | SMatrixAccess(id, x, y) ->
+      id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
+    | SStructCreate(_) -> "TODO"
+    | SStructAccess(id1, id2) -> id1 ^ "." ^ id2
+    | SDupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
+  ) ^ ")"
 
 let rec string_of_sstmt = function
     SBlock(stmts) ->
@@ -45,7 +56,7 @@ let rec string_of_sstmt = function
                       string_of_sstmt s1 ^ "else\n" ^ string_of_sstmt s2
   | SWhile(e, s) -> "while (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
 
-let string_of_sprogram (vars, funcs) =
+let string_of_sprogram fdecl =
   "\n\n Sementically Checked program: \n\n" ^
   String.concat "" (List.map string_of_vdecl fdecl.locals) ^
   String.concat "\n" (List.map string_of_sstmt fdecl.body) ^
