@@ -113,10 +113,10 @@ expr_rule:
  | expr_rule MOD expr_rule               { Binop ($1, Mod, $3) }
  | expr_rule MOVE expr_rule              { Binop ($1, Move, $3) }
  | NOT expr_rule                         { Unop(Not, $2) }
- | DIAGLEFT LPAREN INT_LITERAL RPAREN    { VectorCreate(DiagL, $3) }
- | DIAGRIGHT LPAREN INT_LITERAL RPAREN   { VectorCreate(DiagR, $3) }
- | HORIZONTAL LPAREN INT_LITERAL RPAREN  { VectorCreate(Hori, $3) }
- | VERTICAL LPAREN INT_LITERAL RPAREN    { VectorCreate(Vert, $3) }
+ | DIAGLEFT LPAREN expr_rule RPAREN    { VectorCreate(DiagL, $3) }
+ | DIAGRIGHT LPAREN expr_rule RPAREN   { VectorCreate(DiagR, $3) }
+ | HORIZONTAL LPAREN expr_rule RPAREN  { VectorCreate(Hori, $3) }
+ | VERTICAL LPAREN expr_rule RPAREN    { VectorCreate(Vert, $3) }
  | LPAREN expr_rule RPAREN               { $2 }
  | LBRACE struct_list RBRACE             { StructCreate($2) }
  | ID DOT ID                             { StructAccess($1, $3) }
