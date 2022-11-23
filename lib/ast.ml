@@ -35,7 +35,6 @@ type decl =
 
 type program = {
    locals: decl list;
-   locals: decl list;
    body: stmt list;
 }
 
