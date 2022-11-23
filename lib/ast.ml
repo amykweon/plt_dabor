@@ -27,12 +27,11 @@ type stmt =
   | If of expr * stmt * stmt
   | While of expr * stmt
 
-// TODO: find a way to combine StructDef and bind into decl
-type bind = typ * string
+type s_ele = string * typ
 
 type decl =
-    bind
-  | StructDef of string * bind list
+    Bind of typ * string
+  | StructDef of string * s_ele list
 
 type program = {
    locals: decl list;
@@ -53,10 +52,12 @@ let string_of_op = function
   | Greater -> ">"
   | EqGreater -> ">="
   | And -> "&&"
-  | Or -> "||" 
+  | Or -> "||"
+  | Not -> "!"
+  | Move -> "move" 
 
 let rec string_of_expr = function
-    Literal(l) -> string_of_int l
+    IntLit(l) -> string_of_int l
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | Id(s) -> s

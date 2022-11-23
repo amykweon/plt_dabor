@@ -36,7 +36,7 @@ vdecl_list_rule:
  | vdecl_rule vdecl_list_rule    { $1 :: $2 }
 
 vdecl_rule:
-   typ_rule ID SEMI                          { ($1, $2) }
+   typ_rule ID SEMI                          { Bind($1, $2) }
  | STRUCT ID LBRACE struct_def_list RBRACE   { StructDef($2, $4) }
 
 typ_rule:
