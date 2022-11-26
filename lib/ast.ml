@@ -17,7 +17,7 @@ type expr =
   | Assign of string * expr
   | MatrixCreate of int list list
   | MatrixAccess of string * int * int
-  | StructCreate of (string * expr) list
+  | StructCreate of string * ((string * expr) list)
   | StructAccess of string * string
   | DupleCreate of int * int
 

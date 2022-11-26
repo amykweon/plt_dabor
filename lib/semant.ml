@@ -1,20 +1,69 @@
 open Ast
+open Sast
 
 module StringMap = Map.Make(String)
 let check (vdecls, stmts) = 
 
+  (* Verify a list of bindings has no duplicate names *)
+  (* Also need to make sure structs are declared correctly too? *)
+  let check_binds (kind : string) (binds : decl list) =
+    (* let check_struct_def = function (*checks if struct elements are declared correctly *)*)
+    let rec dups = function
+        [] -> ()
+      |	((_,n1) :: (_,n2) :: _) when n1 = n2 ->
+        raise (Failure ("duplicate " ^ kind ^ " " ^ n1))
+      | _ :: t -> dups t
+    in dups (List.sort (fun (_,a) (_,b) -> compare a b) binds) (*might need to change this implementation*)
+  in
+
+  check_binds "global" vdecls;
+
+
+  let symbol_handler map element = 
+    match element with
+    
   let symbols = List.fold_left 
-  (fun map (ty, name) -> StringMap.add name ty map) 
+  (fun map (ty, name) -> StringMap.add name ty map) (*change to account for structs*)
   StringMap.empty vdecls in
+
+  let struct_handler map element = 
+    match element with
+    | StructDef (name, field_list) -> StringMap.add name field_list map
+    | _ -> map
+  in
+  
+  let struct_field_info = List.fold_left struct_handler StringMap.empty
+
 
   let type_of_identifier s =
     try StringMap.find s symbols
     with Not_found -> raise (Failure ("undeclared identifier " ^ s))
   in
+  (* Raise an exception if the given rvalue type cannot be assigned to
+       the given lvalue type *)
+  let check_assign lvaluet rvaluet err =
+    if lvaluet = rvaluet then lvaluet else raise (Failure err)
+  in
+
+  let get_struct_info s_name
 
   let rec check_expr = function
-        IntLit l -> (Int, SLiteral l)
+        IntLit l -> (Int, SIntLit l)
       | BoolLit l -> (Bool, SBoolLit l)
+      | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
+      | MatrixCreate(els) -> (Matrix, SMatrixCreate(els))
+      | MatrixAccess(var, i, j) -> 
+        let lt = type_of_identifier var in
+        let err = "trying to use non-matrix variable as matrix" in
+        (check_assign lt Int err, SMatrixAccess(var, i, j))
+      | StructCreate(name, fields) -> 
+        let strct = 
+        
+        
+        ()
+      | StructAccess(name, field) ->
+
+        ()
       | Id var -> (type_of_identifier var, SId var)
       | Assign(var, e) as ex ->
         let lt = type_of_identifier var
