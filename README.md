@@ -32,6 +32,7 @@ Seoyoung Kweon:
 
 Nicholas Greenspan:
 - basic implementation of semant.ml, test.ml
+- contributed to ast.ml and sast.ml
 
 Annie Song:
 - debugging on compilation error of basic parser.mly, scanner.mll, ast.ml
