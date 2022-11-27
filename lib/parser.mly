@@ -122,6 +122,7 @@ expr_rule:
  | ID DOT ID                             { StructAccess($1, $3) }
  | MATRIX_C LPAREN matrix_rule RPAREN    { MatrixCreate($3) }
  | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { MatrixAccess($1, $3, $5) }
+ | ID LBRACK ID RBRACK                            { MatrixAccessDup($1, $3) }
  // TODO: id_rule bug | ID LBRACK id_rule RBRACK                       { MatrixAccess($1, $3) }
  | LPAREN INT_LITERAL COMMA INT_LITERAL RPAREN    { DupleCreate($2, $4) }
 

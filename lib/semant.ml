@@ -18,22 +18,20 @@ let check (vdecls, stmts) =
 
   check_binds "global" vdecls;
 
-
-  let symbol_handler map element = 
-    match element with
-    
-  let symbols = List.fold_left 
-  (fun map (ty, name) -> StringMap.add name ty map) (*change to account for structs*)
-  StringMap.empty vdecls in
-
   let struct_handler map element = 
     match element with
     | StructDef (name, field_list) -> StringMap.add name field_list map
     | _ -> map
   in
-  
-  let struct_field_info = List.fold_left struct_handler StringMap.empty
+  let struct_field_info = List.fold_left struct_handler StringMap.empty vdecls in
 
+  (* think about if we need to check if struct types are defined *)
+  let symbol_handler map element = 
+    match element with
+    | Bind(ty, name) -> StringMap.add name ty map
+    | _ -> map
+  in
+  let symbols = List.fold_left symbol_handler StringMap.empty vdecls in
 
   let type_of_identifier s =
     try StringMap.find s symbols
@@ -45,8 +43,11 @@ let check (vdecls, stmts) =
     if lvaluet = rvaluet then lvaluet else raise (Failure err)
   in
 
-  let get_struct_info s_name
-
+  let get_struct_info s_name =
+    try StringMap.find s_name struct_field_info
+    with Not_found -> raise (Failure ("undeclared struct type " ^ s_name))
+  in
+  
   let rec check_expr = function
         IntLit l -> (Int, SIntLit l)
       | BoolLit l -> (Bool, SBoolLit l)
@@ -57,7 +58,20 @@ let check (vdecls, stmts) =
         let err = "trying to use non-matrix variable as matrix" in
         (check_assign lt Int err, SMatrixAccess(var, i, j))
       | StructCreate(name, fields) -> 
-        let strct = 
+        let check_struct_object_creation s_info_entry field_entry = 
+          match s_info_entry with
+            (f_name, f_type) -> (
+            match field_entry with
+              (o_name, o_expr) -> let (o_type, _) = check_expr o_expr in
+              f_name = o_name && f_type = o_type
+            )
+          false
+        in
+        let s_info = get_struct_info name in
+        let correct_entries = List.map2 check_struct_object_creation s_info fields in
+        
+
+
         
         
         ()
@@ -108,6 +122,8 @@ let check (vdecls, stmts) =
           in (fd.rtyp, SCall(fname, args'))
     in
 
+    
+        )
 
 (* need to implement functionality for matrix, vector, struct, if, and while *)
 
