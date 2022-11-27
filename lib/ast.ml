@@ -15,9 +15,12 @@ type expr =
   | Binop of expr * op * expr
   | Unop of op * expr
   | Assign of string * expr
-  | MatrixCreate of int list list
+  | StructAssign of string * string * expr
+  | MatrixAssign of string * int * int * expr
+  | MatrixCreate of (int list) list
   | MatrixAccess of string * int * int
   | MatrixAccessDup of string * string
+  | MatrixAccessStruct of string * string * string
   | StructCreate of string * ((string * expr) list)
   | StructAccess of string * string
   | DupleCreate of int * int
@@ -63,6 +66,9 @@ let string_of_dir = function
   | Hori -> "hori"
   | Vert -> "vert"
 
+let string_of_matrix (i) = string_of_int i ^ " "
+let string_of_matrix_l (l) = "[ " ^ String.concat "" (List.map string_of_matrix l) ^ "]\n"
+
 let rec string_of_expr = function
     IntLit(l) -> string_of_int l
   | BoolLit(true) -> "true"
@@ -73,15 +79,18 @@ let rec string_of_expr = function
     string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) -> string_of_expr e ^ " " ^ string_of_op o
   | Assign(v, e) -> v ^ " = " ^ string_of_expr e
+  | StructAssign (v1, v2, e) -> v1 ^ "." ^ v2 ^ " = " ^ string_of_expr e
+  | MatrixAssign (v, i1, i2, e) -> v ^ "[" ^ string_of_int i1 ^ ", " ^ string_of_int i2 ^ "] = " ^ string_of_expr e
   | VectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_expr num
-  | MatrixCreate(_) -> "TODO"
+  | MatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
   | MatrixAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
-  | MatrixAccessDup(id, id2) ->
-    id ^ " [" ^ id2 ^ "]"
-  | StructCreate(_) -> "TODO"
+  | MatrixAccessDup(id, id2) -> id ^ " [" ^ id2 ^ "]"
+  | MatrixAccessStruct(idm, id1, id2) -> idm ^ " [" ^ id1 ^ "." ^ id2 ^ "]"
+  | StructCreate(id, l) -> id ^ " = {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
   | StructAccess(id1, id2) -> id1 ^ "." ^ id2
   | DupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
+and struct_of_struct_e (id, e) = id ^ " : " ^ string_of_expr e ^ ";\n"
 
 let rec string_of_stmt = function
     Block(stmts) ->
