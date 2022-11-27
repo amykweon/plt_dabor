@@ -118,7 +118,7 @@ expr_rule:
  | HORIZONTAL LPAREN expr_rule RPAREN  { VectorCreate(Hori, $3) }
  | VERTICAL LPAREN expr_rule RPAREN    { VectorCreate(Vert, $3) }
  | LPAREN expr_rule RPAREN               { $2 }
- | LBRACE struct_list RBRACE             { StructCreate($2) }
+ | ID LBRACE struct_list RBRACE             { StructCreate($1, $3) }
  | ID DOT ID                             { StructAccess($1, $3) }
  | MATRIX_C LPAREN matrix_rule RPAREN    { MatrixCreate($3) }
  | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { MatrixAccess($1, $3, $5) }

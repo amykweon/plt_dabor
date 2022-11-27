@@ -57,27 +57,31 @@ let check (vdecls, stmts) =
         let lt = type_of_identifier var in
         let err = "trying to use non-matrix variable as matrix" in
         (check_assign lt Int err, SMatrixAccess(var, i, j))
-      | StructCreate(name, fields) -> 
-        let check_struct_object_creation s_info_entry field_entry = 
-          match s_info_entry with
-            (f_name, f_type) -> (
-            match field_entry with
-              (o_name, o_expr) -> let (o_type, _) = check_expr o_expr in
-              f_name = o_name && f_type = o_type
-            )
-          false
+      | StructCreate(name, fields) -> (
+        let check_struct_object_creation ((s_f_name, s_f_type)) ((o_f_name, o_f_expr)) =
+          let (o_f_type, _) = check_expr o_f_expr in
+          s_f_name = o_f_name && s_f_type = o_f_type
         in
         let s_info = get_struct_info name in
         let correct_entries = List.map2 check_struct_object_creation s_info fields in
-        
-
-
-        
-        
-        ()
-      | StructAccess(name, field) ->
-
-        ()
+        let x = List.fold_left (fun x y -> x && y) true correct_entries in
+          match x with 
+            | true -> (StructT(name), SStructCreate(name, fields))
+            | _ -> raise (Failure ("struct object fields don't match struct type"))
+      )
+      | StructAccess(name, field_name) -> (
+        let rec get_field_type target_field_name s_info = 
+          match s_info with
+          | [] -> None
+          | ((f_name,f_type) :: _ ) when f_name = target_field_name -> Some(f_type)
+          | (_ :: tl) -> get_field_type target_field_name tl
+        in
+        let s_info = get_struct_info name in
+        let f_type = get_field_type field_name s_info in
+          match f_type with
+          | Some f_ty -> (f_ty, SStructAccess(name, field_name))
+          | None -> raise (Failure ("struct doesn't have field matching given name"))
+      )
       | Id var -> (type_of_identifier var, SId var)
       | Assign(var, e) as ex ->
         let lt = type_of_identifier var

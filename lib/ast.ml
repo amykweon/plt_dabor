@@ -77,6 +77,8 @@ let rec string_of_expr = function
   | MatrixCreate(_) -> "TODO"
   | MatrixAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
+  | MatrixAccessDup(id, id2) ->
+    id ^ " [" ^ id2 ^ "]"
   | StructCreate(_) -> "TODO"
   | StructAccess(id1, id2) -> id1 ^ "." ^ id2
   | DupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"

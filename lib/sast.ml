@@ -12,7 +12,7 @@ and sx =
   | SAssign of string * sexpr
   | SMatrixCreate of int list list
   | SMatrixAccess of string * int * int
-  | SStructCreate of (string * sexpr) list
+  | SStructCreate of string * ((string * expr) list)
   | SStructAccess of string * string
   | SDupleCreate of int * int
 
