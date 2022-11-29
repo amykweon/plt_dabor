@@ -83,14 +83,22 @@ rest_of_matrix_rule:
 matrix_rule:
    LBRACK rest_of_matrix_rule  { $2 }
 
+id_rule:
+   ID                                             { VarId $1 }
+ | ID DOT ID                                      { StructFieldId($1, $3) }
+ | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { MatrixAccessId($1, $3, $5) }
+ | ID LBRACK ID RBRACK                            { MatrixAccessDupId($1, $3) }
+ 
+
 expr_rule:
    BLIT                                  { BoolLit $1 }
  | INT_LITERAL                           { IntLit $1 }
  | STRING_LITERAL                        { StringLit $1 }
  | ID                                    { Id $1 }
- | ID ASSIGN expr_rule                   { Assign ($1, $3) }
- | ID DOT ID ASSIGN expr_rule            { StructAssign ($1, $3, $5) }
- | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK ASSIGN expr_rule { MatrixAssign($1, $3, $5, $8) }
+//  | ID ASSIGN expr_rule                   { Assign ($1, $3) }
+ | id_rule ASSIGN expr_rule              { Assign ($1, $3)}
+//  | ID DOT ID ASSIGN expr_rule            { StructAssign ($1, $3, $5) }
+//  | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK ASSIGN expr_rule { MatrixAssign($1, $3, $5, $8) }
  | expr_rule PLUS expr_rule              { Binop ($1, Add, $3) }
  | expr_rule MINUS expr_rule             { Binop ($1, Sub, $3) }
  | expr_rule MULTIPLY expr_rule          { Binop ($1, Multi, $3) }

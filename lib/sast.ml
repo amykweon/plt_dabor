@@ -12,6 +12,8 @@ and sx =
   | SAssign of string * sexpr
   | SMatrixCreate of int list list
   | SMatrixAccess of string * int * int
+  | SMatrixAccessDup of string * string
+  | SMatrixAccessStruct of string * string * string
   | SStructCreate of string * ((string * expr) list)
   | SStructAccess of string * string
   | SDupleCreate of int * int
@@ -43,6 +45,8 @@ let rec string_of_sexpr (t, e) =
     | SMatrixCreate(_) -> "TODO"
     | SMatrixAccess(id, x, y) ->
       id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
+    | SMatrixAccessDup(id1, id2) -> id1 ^ "[" ^ id2 ^ "]"
+    | SMatrixAccessStruct(id1, id2, id3) -> id1 ^ "[" ^ id2 ^ "." ^ id3 ^ "]"
     | SStructCreate(_) -> "TODO"
     | SStructAccess(id1, id2) -> id1 ^ "." ^ id2
     | SDupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"

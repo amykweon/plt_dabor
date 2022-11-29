@@ -6,6 +6,12 @@ type dir = DiagL | DiagR | Hori | Vert
 
 type typ = Int | Bool | String | Vector | Matrix | StructT of string | Duple
 
+type id_typ = 
+    VarId of string (*could be a variable of any typ*)
+  | StructFieldId of string * string
+  | MatrixAccessId of string * int * int
+  | MatrixAccessDupId of string * id_typ
+
 type expr =
     IntLit of int
   | BoolLit of bool
@@ -14,9 +20,10 @@ type expr =
   | VectorCreate of dir * expr
   | Binop of expr * op * expr
   | Unop of op * expr
-  | Assign of string * expr
-  | StructAssign of string * string * expr
-  | MatrixAssign of string * int * int * expr
+  (* | Assign of string * expr *)
+  | Assign of id_typ * expr
+  (* | StructAssign of string * string * expr *)
+  (* | MatrixAssign of string * int * int * expr we will need to later support matrix assignment with *)
   | MatrixCreate of (int list) list
   | MatrixAccess of string * int * int
   | MatrixAccessDup of string * string
@@ -78,9 +85,10 @@ let rec string_of_expr = function
   | Binop(e1, o, e2) ->
     string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) -> string_of_expr e ^ " " ^ string_of_op o
-  | Assign(v, e) -> v ^ " = " ^ string_of_expr e
-  | StructAssign (v1, v2, e) -> v1 ^ "." ^ v2 ^ " = " ^ string_of_expr e
-  | MatrixAssign (v, i1, i2, e) -> v ^ "[" ^ string_of_int i1 ^ ", " ^ string_of_int i2 ^ "] = " ^ string_of_expr e
+  (* | Assign(v, e) -> v ^ " = " ^ string_of_expr e *)
+  | Assign(_, _) -> "placeholder"
+  (* | StructAssign (v1, v2, e) -> v1 ^ "." ^ v2 ^ " = " ^ string_of_expr e
+  | MatrixAssign (v, i1, i2, e) -> v ^ "[" ^ string_of_int i1 ^ ", " ^ string_of_int i2 ^ "] = " ^ string_of_expr e *)
   | VectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_expr num
   | MatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
   | MatrixAccess(id, x, y) ->

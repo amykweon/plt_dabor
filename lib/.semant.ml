@@ -47,16 +47,44 @@ let check (vdecls, stmts) =
     try StringMap.find s_name struct_field_info
     with Not_found -> raise (Failure ("undeclared struct type " ^ s_name))
   in
+
+  let rec get_field_type target_field_name s_info = 
+    match s_info with
+    | [] -> None
+    | ((f_name,f_type) :: _ ) when f_name = target_field_name -> Some(f_type)
+    | (_ :: tl) -> get_field_type target_field_name tl
+  in
   
   let rec check_expr = function
         IntLit l -> (Int, SIntLit l)
       | BoolLit l -> (Bool, SBoolLit l)
+      | StringLit l -> (String, SStringLit l)
       | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
+      | DupleCreate(i, j) -> (Duple, SDupleCreate(i, j))
       | MatrixCreate(els) -> (Matrix, SMatrixCreate(els))
       | MatrixAccess(var, i, j) -> 
         let lt = type_of_identifier var in
         let err = "trying to use non-matrix variable as matrix" in
         (check_assign lt Int err, SMatrixAccess(var, i, j))
+      | MatrixAccessDup(m_name, d_name) ->
+        let mt = type_of_identifier m_name in
+        let dt = type_of_identifier d_name in
+          if (mt = Matrix && dt = Duple) then
+            (Int, SMatrixAccessDup(m_name, d_name))
+          else
+            raise (Failure ("tried to use matrix duple indexing with invalid types"))
+      | MatrixAccessStruct(m_name, s_name, f_name) -> (
+        let mt = type_of_identifier m_name in
+        if (mt = Matrix) then
+          let s_info = get_struct_info s_name in
+            let f_type = get_field_type f_name s_info in
+              match f_type with
+              | Some Duple -> (Int, SMatrixAccessStruct(m_name, s_name, f_name))
+              | Some _ -> raise (Failure ("trying to access matrix with non duple struct field"))
+              | None -> raise (Failure ("struct doesn't have field matching given name"))
+        else
+          raise (Failure ("trying to use non-matrix variable as matrix"))
+      )
       | StructCreate(name, fields) -> (
         let check_struct_object_creation ((s_f_name, s_f_type)) ((o_f_name, o_f_expr)) =
           let (o_f_type, _) = check_expr o_f_expr in
@@ -70,12 +98,6 @@ let check (vdecls, stmts) =
             | _ -> raise (Failure ("struct object fields don't match struct type"))
       )
       | StructAccess(name, field_name) -> (
-        let rec get_field_type target_field_name s_info = 
-          match s_info with
-          | [] -> None
-          | ((f_name,f_type) :: _ ) when f_name = target_field_name -> Some(f_type)
-          | (_ :: tl) -> get_field_type target_field_name tl
-        in
         let s_info = get_struct_info name in
         let f_type = get_field_type field_name s_info in
           match f_type with
@@ -90,7 +112,10 @@ let check (vdecls, stmts) =
                   string_of_typ rt ^ " in " ^ string_of_expr ex
         in
         (check_assign lt rt err, SAssign(var, (rt, e')))
+      (* | StructAssign() -> ()
+      | MatrixAssign(m_name, ) -> ( *)
 
+      )
       | Binop(e1, op, e2) as e ->
         let (t1, e1') = check_expr e1
         and (t2, e2') = check_expr e2 in
@@ -102,7 +127,8 @@ let check (vdecls, stmts) =
         if t1 = t2 then
           (* Determine expression type based on operator and operand types *)
           let t = match op with
-              Add | Sub when t1 = Int -> Int
+              Add | Sub when (t1 = Int) -> Int
+            | Add | Sub when (t1 = Vector) -> Vector
             | Equal | Neq -> Bool
             | Less when t1 = Int -> Bool
             | And | Or when t1 = Bool -> Bool
@@ -110,24 +136,11 @@ let check (vdecls, stmts) =
           in
           (t, SBinop((t1, e1'), op, (t2, e2')))
         else raise (Failure err)
-      | Call(fname, args) as call ->
-        let fd = find_func fname in
-        let param_length = List.length fd.formals in
-        if List.length args != param_length then
-          raise (Failure ("expecting " ^ string_of_int param_length ^
-                          " arguments in " ^ string_of_expr call))
-        else let check_call (ft, _) e =
-               let (et, e') = check_expr e in
-               let err = "illegal argument found " ^ string_of_typ et ^
-                         " expected " ^ string_of_typ ft ^ " in " ^ string_of_expr e
-               in (check_assign ft et err, e')
-          in
-          let args' = List.map2 check_call fd.formals args
-          in (fd.rtyp, SCall(fname, args'))
+      | Unop(op, e1) -> let (t1, e1') = check_expr e1 in (t1, SUnop (op, (t1, e1')))
     in
 
     
-        )
+        
 
 (* need to implement functionality for matrix, vector, struct, if, and while *)
 
