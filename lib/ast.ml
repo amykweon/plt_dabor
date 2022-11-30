@@ -10,7 +10,7 @@ type id_typ =
     VarId of string (*could be a variable of any typ*)
   | StructFieldId of string * string
   | MatrixAccessId of string * int * int
-  | MatrixAccessDupId of string * id_typ
+  | MatrixAccessDupId of string * string
 
 type expr =
     IntLit of int

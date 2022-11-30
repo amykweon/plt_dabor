@@ -6,17 +6,18 @@ let check (vdecls, stmts) =
 
   (* Verify a list of bindings has no duplicate names *)
   (* Also need to make sure structs are declared correctly too? *)
-  let check_binds (kind : string) (binds : decl list) =
+  (* let check_binds (kind : string) (binds : decl list) =
     (* let check_struct_def = function (*checks if struct elements are declared correctly *)*)
     let rec dups = function
-        [] -> ()
+      | [StructDef] :: _
+      |  [] -> ()
       |	((_,n1) :: (_,n2) :: _) when n1 = n2 ->
         raise (Failure ("duplicate " ^ kind ^ " " ^ n1))
       | _ :: t -> dups t
     in dups (List.sort (fun (_,a) (_,b) -> compare a b) binds) (*might need to change this implementation*)
   in
 
-  check_binds "global" vdecls;
+  check_binds "global" vdecls; *)
 
   let struct_handler map element = 
     match element with
@@ -28,7 +29,11 @@ let check (vdecls, stmts) =
   (* think about if we need to check if struct types are defined *)
   let symbol_handler map element = 
     match element with
-    | Bind(ty, name) -> StringMap.add name ty map
+    | Bind(ty, name) -> (
+      let dup = StringMap.find_opt name map in match dup with
+        | Some _ -> raise (Failure ("duplicate variable name: " ^ name))
+        | None -> StringMap.add name ty map
+    )
     | _ -> map
   in
   let symbols = List.fold_left symbol_handler StringMap.empty vdecls in
@@ -105,16 +110,36 @@ let check (vdecls, stmts) =
           | None -> raise (Failure ("struct doesn't have field matching given name"))
       )
       | Id var -> (type_of_identifier var, SId var)
-      | Assign(var, e) as ex ->
-        let lt = type_of_identifier var
-        and (rt, e') = check_expr e in
-        let err = "illegal assignment " ^ string_of_typ lt ^ " = " ^
-                  string_of_typ rt ^ " in " ^ string_of_expr ex
-        in
-        (check_assign lt rt err, SAssign(var, (rt, e')))
-      (* | StructAssign() -> ()
-      | MatrixAssign(m_name, ) -> ( *)
-
+      | Assign(id, e) -> (
+        let (r_ty, e') = check_expr e in
+        match id with
+          | VarId (var) -> let l_ty = type_of_identifier var in
+            if (r_ty = l_ty) then
+              (r_ty, SAssign(VarId (var), (r_ty, e')))
+            else raise (Failure ("illegal assignment, types don't match up"))
+          | StructFieldId(s_var, f_var) -> 
+            let s_info = get_struct_info s_var in
+            let f_type = get_field_type f_var s_info in (
+              match f_type with
+              | Some f_ty when (f_ty = r_ty) -> (f_ty, SAssign(StructFieldId(s_var, f_var), (f_ty, e')))
+              | Some _ -> raise (Failure ("struct field type doesn't allign with expression type"))
+              | None -> raise (Failure ("struct doesn't have field matching given name"))
+            )
+          | MatrixAccessId(m_var, i, j) -> (
+            let l_ty = type_of_identifier m_var in
+            if (l_ty = Matrix && r_ty = Int) then
+              (r_ty, SAssign(MatrixAccessId(m_var, i, j), (r_ty, e')))
+            else
+              raise (Failure ("Wrong types while assigning to matrix element with indices"))
+          )
+          | MatrixAccessDupId(m_var, d_var) as id -> (
+            let m_ty = type_of_identifier m_var in
+            let d_ty = type_of_identifier d_var in
+            if (m_ty = Matrix && d_ty = Duple && r_ty = Int) then
+              (r_ty, SAssign(id, (r_ty, e')))
+            else
+              raise (Failure ("Wrong types while assigning to matrix element with duple"))
+          )
       )
       | Binop(e1, op, e2) as e ->
         let (t1, e1') = check_expr e1
@@ -139,11 +164,27 @@ let check (vdecls, stmts) =
       | Unop(op, e1) -> let (t1, e1') = check_expr e1 in (t1, SUnop (op, (t1, e1')))
     in
 
-    
-        
+    let check_bool_expr e =
+      let (t, e') = check_expr e in
+      match t with
+      | Bool -> (t, e')
+      |  _ -> raise (Failure ("expected Boolean expression in " ^ string_of_expr e))
+    in
 
-(* need to implement functionality for matrix, vector, struct, if, and while *)
+    let rec check_stmt_list =function
+        [] -> []
+      | Block sl :: sl'  -> check_stmt_list (sl @ sl') (* Flatten blocks *)
+      | s :: sl -> check_stmt s :: check_stmt_list sl
+    (* Return a semantically-checked statement i.e. containing sexprs *)
+    and check_stmt =function
+      (* A block is correct if each statement is correct and nothing
+         follows any Return statement.  Nested blocks are flattened. *)
+        Block sl -> SBlock (check_stmt_list sl)
+      | Expr e -> SExpr (check_expr e)
+      | If(e, st1, st2) ->
+        SIf(check_bool_expr e, check_stmt st1, check_stmt st2)
+      | While(e, st) ->
+        SWhile(check_bool_expr e, check_stmt st)
 
-  
-  
-  (* let rec check_expr =  *)
+    in (* body of check_func *)
+    (vdecls, check_stmt_list stmts)
