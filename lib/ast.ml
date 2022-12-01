@@ -6,23 +6,22 @@ type dir = DiagL | DiagR | Hori | Vert
 
 type typ = Int | Bool | String | Vector | Matrix | StructT of string | Duple
 
-type assign =
+type id_typ = 
     Id of string
   | StructAccess of string * string
   | MatrixAccess of string * int * int
+  | MatrixAccessVar of string * id_typ
 
 type expr =
     IntLit of int
   | BoolLit of bool
   | StringLit of string
-  | IdRule of assign
+  | IdRule of id_typ
   | VectorCreate of dir * expr
   | Binop of expr * op * expr
   | Unop of op * expr
-  | Assign of assign * expr
+  | Assign of id_typ * expr
   | MatrixCreate of (int list) list
-  | MatrixAccessDup of string * string
-  | MatrixAccessStruct of string * string * string
   | StructCreate of string * ((string * expr) list)
   | DupleCreate of int * int
 
@@ -70,26 +69,25 @@ let string_of_dir = function
 let string_of_matrix (i) = string_of_int i ^ " "
 let string_of_matrix_l (l) = "[ " ^ String.concat "" (List.map string_of_matrix l) ^ "]\n"
 
-let string_assign = function
+let rec string_id_typ = function
     Id(s) -> s
   | StructAccess(id1, id2) -> id1 ^ "." ^ id2
   | MatrixAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
+  | MatrixAccessVar(id, v) -> id ^ " [" ^ string_id_typ v ^ "]"
 
 let rec string_of_expr = function
     IntLit(l) -> string_of_int l
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | StringLit(l) -> l
-  | IdRule(v) -> string_assign v
+  | IdRule(v) -> string_id_type v
   | Binop(e1, o, e2) ->
     string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) -> string_of_expr e ^ " " ^ string_of_op o
-  | Assign(v, e) -> string_assign v ^ " = " ^ string_of_expr e
+  | Assign(v, e) -> string_id_typ v ^ " = " ^ string_of_expr e
   | VectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_expr num
   | MatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
-  | MatrixAccessDup(id, id2) -> id ^ " [" ^ id2 ^ "]"
-  | MatrixAccessStruct(idm, id1, id2) -> idm ^ " [" ^ id1 ^ "." ^ id2 ^ "]"
   | StructCreate(id, l) -> id ^ " = {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
   | DupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
 and struct_of_struct_e (id, e) = id ^ " : " ^ string_of_expr e ^ ";\n"

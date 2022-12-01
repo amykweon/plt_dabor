@@ -1,10 +1,11 @@
 open Ast
 
-type sassign = typ * sa
-and sa =
+type sid_typ = typ * si
+and si =
     SId of string
   | SStructAccess of string * string
   | SMatrixAccess of string * int * int
+  | SMatrixAccessVar of string * sid_typ
 
 type sexpr = typ * sx
 and sx =
@@ -15,10 +16,8 @@ and sx =
   | SVectorCreate of dir * sexpr
   | SBinop of sexpr * op * sexpr
   | SUnop of op * sexpr
-  | SAssign of sassign * sexpr
+  | SAssign of sid_typ * sexpr
   | SMatrixCreate of (int list) list
-  | SMatrixAccessDup of string * string
-  | SMatrixAccessStruct of string * string * string
   | SStructCreate of string * ((string * expr) list)
   | SDupleCreate of int * int
 
@@ -34,13 +33,14 @@ type sprogram = {
 }
 
 (* Pretty-printing functions *)
-let string_sassign (t, a)=
-"(" ^ string_of_typ t ^ " : " ^ (match a with
+let rec string_sid_typ (t, i)=
+"(" ^ string_of_typ t ^ " : " ^ (match i with
     SId(s) -> s
   | SStructAccess(id1, id2) -> id1 ^ "." ^ id2
   | SMatrixAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
-) ^ ")"
+  | SMatrixAccessVar(id, v) -> id ^ " [" ^ string_sid_typ v ^ "]"
+ ) ^ ")"
 
 let rec string_of_sexpr (t, e) = 
   "(" ^ string_of_typ t ^ " : " ^ (match e with
@@ -52,11 +52,9 @@ let rec string_of_sexpr (t, e) =
     | SBinop(e1, o, e2) ->
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2
     | SUnop(o, e) -> string_of_sexpr e ^ " " ^ string_of_op o
-    | SAssign(v, e) -> string_sassign v ^ " = " ^ string_of_sexpr e
+    | SAssign(v, e) -> string_sid_typ v ^ " = " ^ string_of_sexpr e
     | SVectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_sexpr num
     | SMatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
-    | SMatrixAccessDup(id, id2) -> id ^ " [" ^ id2 ^ "]"
-    | SMatrixAccessStruct(idm, id1, id2) -> idm ^ " [" ^ id1 ^ "." ^ id2 ^ "]"
     | SStructCreate(id, l) -> id ^ " = {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
     | SDupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
   ) ^ ")"
