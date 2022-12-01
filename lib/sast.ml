@@ -12,7 +12,7 @@ and sx =
     SIntLit of int
   | SBoolLit of bool
   | SStringLit of string
-  | SIdRule of sassign
+  | SIdRule of sid_typ
   | SVectorCreate of dir * sexpr
   | SBinop of sexpr * op * sexpr
   | SUnop of op * sexpr
@@ -48,7 +48,7 @@ let rec string_of_sexpr (t, e) =
     | SBoolLit(true) -> "true"
     | SBoolLit(false) -> "false"
     | SStringLit(l) -> l
-    | SIdRule(s) -> string_sassign s
+    | SIdRule(s) -> string_sid_typ s
     | SBinop(e1, o, e2) ->
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2
     | SUnop(o, e) -> string_of_sexpr e ^ " " ^ string_of_op o

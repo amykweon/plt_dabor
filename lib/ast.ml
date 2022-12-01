@@ -81,7 +81,7 @@ let rec string_of_expr = function
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
   | StringLit(l) -> l
-  | IdRule(v) -> string_id_type v
+  | IdRule(v) -> string_id_typ v
   | Binop(e1, o, e2) ->
     string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) -> string_of_expr e ^ " " ^ string_of_op o
