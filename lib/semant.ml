@@ -60,36 +60,37 @@ let check (vdecls, stmts) =
     | (_ :: tl) -> get_field_type target_field_name tl
   in
   
-  let rec check_expr = function
-        IntLit l -> (Int, SIntLit l)
-      | BoolLit l -> (Bool, SBoolLit l)
-      | StringLit l -> (String, SStringLit l)
-      | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
-      | DupleCreate(i, j) -> (Duple, SDupleCreate(i, j))
-      | MatrixCreate(els) -> (Matrix, SMatrixCreate(els))
+  let rec check_id_typ = function
+        Id var -> (type_of_identifier var, SId var)
+      | StructAccess(name, field_name) -> (
+        let s_info = get_struct_info name in
+        let f_type = get_field_type field_name s_info in
+          match f_type with
+          | Some f_ty -> (f_ty, SStructAccess(name, field_name))
+          | None -> raise (Failure ("struct doesn't have field matching given name"))
+      )
       | MatrixAccess(var, i, j) -> 
         let lt = type_of_identifier var in
         let err = "trying to use non-matrix variable as matrix" in
         (check_assign lt Int err, SMatrixAccess(var, i, j))
-      | MatrixAccessDup(m_name, d_name) ->
+      | MatrixAccessVar(m_name, id_name) -> (
+        let (id_ty, id_name') = check_id_typ id_name in
         let mt = type_of_identifier m_name in
-        let dt = type_of_identifier d_name in
-          if (mt = Matrix && dt = Duple) then
-            (Int, SMatrixAccessDup(m_name, d_name))
+          if (mt = Matrix && id_ty = Duple) then
+            (Int, SMatrixAccessVar(m_name, id_name'))
           else
             raise (Failure ("tried to use matrix duple indexing with invalid types"))
-      | MatrixAccessStruct(m_name, s_name, f_name) -> (
-        let mt = type_of_identifier m_name in
-        if (mt = Matrix) then
-          let s_info = get_struct_info s_name in
-            let f_type = get_field_type f_name s_info in
-              match f_type with
-              | Some Duple -> (Int, SMatrixAccessStruct(m_name, s_name, f_name))
-              | Some _ -> raise (Failure ("trying to access matrix with non duple struct field"))
-              | None -> raise (Failure ("struct doesn't have field matching given name"))
-        else
-          raise (Failure ("trying to use non-matrix variable as matrix"))
       )
+    in
+
+  let rec check_expr = function
+        IntLit l -> (Int, SIntLit l)
+      | BoolLit l -> (Bool, SBoolLit l)
+      | StringLit l -> (String, SStringLit l)
+      | IdRule i -> check_id_typ
+      | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
+      | DupleCreate(i, j) -> (Duple, SDupleCreate(i, j))
+      | MatrixCreate(els) -> (Matrix, SMatrixCreate(els))
       | StructCreate(name, fields) -> (
         let check_struct_object_creation ((s_f_name, s_f_type)) ((o_f_name, o_f_expr)) =
           let (o_f_type, _) = check_expr o_f_expr in
@@ -102,44 +103,16 @@ let check (vdecls, stmts) =
             | true -> (StructT(name), SStructCreate(name, fields))
             | _ -> raise (Failure ("struct object fields don't match struct type"))
       )
-      | StructAccess(name, field_name) -> (
-        let s_info = get_struct_info name in
-        let f_type = get_field_type field_name s_info in
-          match f_type with
-          | Some f_ty -> (f_ty, SStructAccess(name, field_name))
-          | None -> raise (Failure ("struct doesn't have field matching given name"))
-      )
-      | Id var -> (type_of_identifier var, SId var)
       | Assign(id, e) -> (
         let (r_ty, e') = check_expr e in
-        match id with
-          | VarId (var) -> let l_ty = type_of_identifier var in
-            if (r_ty = l_ty) then
-              (r_ty, SAssign(VarId (var), (r_ty, e')))
-            else raise (Failure ("illegal assignment, types don't match up"))
-          | StructFieldId(s_var, f_var) -> 
-            let s_info = get_struct_info s_var in
-            let f_type = get_field_type f_var s_info in (
-              match f_type with
-              | Some f_ty when (f_ty = r_ty) -> (f_ty, SAssign(StructFieldId(s_var, f_var), (f_ty, e')))
-              | Some _ -> raise (Failure ("struct field type doesn't allign with expression type"))
-              | None -> raise (Failure ("struct doesn't have field matching given name"))
-            )
-          | MatrixAccessId(m_var, i, j) -> (
-            let l_ty = type_of_identifier m_var in
-            if (l_ty = Matrix && r_ty = Int) then
-              (r_ty, SAssign(MatrixAccessId(m_var, i, j), (r_ty, e')))
-            else
-              raise (Failure ("Wrong types while assigning to matrix element with indices"))
-          )
-          | MatrixAccessDupId(m_var, d_var) as id -> (
-            let m_ty = type_of_identifier m_var in
-            let d_ty = type_of_identifier d_var in
-            if (m_ty = Matrix && d_ty = Duple && r_ty = Int) then
-              (r_ty, SAssign(id, (r_ty, e')))
-            else
-              raise (Failure ("Wrong types while assigning to matrix element with duple"))
-          )
+        let (id_typ, id') = check_id_typ in
+        if (r_ty == Int && id_typ == Int) then
+          match id with
+            | VarId (var) -> (r_ty, SAssign(VarId (var), (r_ty, e')))
+            | StructFieldId(s_var, f_var) -> (f_ty, SAssign(StructFieldId(s_var, f_var), (f_ty, e')))
+            | MatrixAccessId(m_var, i, j) -> (r_ty, SAssign(MatrixAccessId(m_var, i, j), (r_ty, e')))
+            | MatrixAccessVarId(m_var, id_var) as m_id -> (r_ty, SAssign(m_id, (r_ty, e')))
+          else raise (Failure ("illegal assignment, types don't match up"))
       )
       | Binop(e1, op, e2) as e ->
         let (t1, e1') = check_expr e1
