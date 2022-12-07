@@ -2,8 +2,9 @@ open Ast
 open Sast
 
 module StringMap = Map.Make(String)
-let check (vdecls, stmts) = 
-
+let check (program: program) = 
+  let vdecls = program.locals in
+  let stmts = program.body in
   let struct_handler map element = 
     match element with
     | StructDef (name, field_list) -> StringMap.add name field_list map

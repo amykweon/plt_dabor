@@ -67,8 +67,8 @@ let rec string_of_sstmt = function
                       string_of_sstmt s1 ^ "else\n" ^ string_of_sstmt s2
   | SWhile(e, s) -> "while (" ^ string_of_sexpr e ^ ") " ^ string_of_sstmt s
 
-let string_of_sprogram fdecl =
-  "\n\n Sementically Checked program: \n\n" ^
-  String.concat "" (List.map string_of_vdecl fdecl.locals) ^
-  String.concat "\n" (List.map string_of_sstmt fdecl.body) ^
+let string_of_sprogram (locals, body) =
+  "\n\n Semantically Checked program: \n\n" ^
+  String.concat "" (List.map string_of_vdecl locals) ^
+  String.concat "\n" (List.map string_of_sstmt body) ^
   "\n"
