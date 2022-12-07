@@ -4,21 +4,6 @@ open Sast
 module StringMap = Map.Make(String)
 let check (vdecls, stmts) = 
 
-  (* Verify a list of bindings has no duplicate names *)
-  (* Also need to make sure structs are declared correctly too? *)
-  (* let check_binds (kind : string) (binds : decl list) =
-    (* let check_struct_def = function (*checks if struct elements are declared correctly *)*)
-    let rec dups = function
-      | [StructDef] :: _
-      |  [] -> ()
-      |	((_,n1) :: (_,n2) :: _) when n1 = n2 ->
-        raise (Failure ("duplicate " ^ kind ^ " " ^ n1))
-      | _ :: t -> dups t
-    in dups (List.sort (fun (_,a) (_,b) -> compare a b) binds) (*might need to change this implementation*)
-  in
-
-  check_binds "global" vdecls; *)
-
   let struct_handler map element = 
     match element with
     | StructDef (name, field_list) -> StringMap.add name field_list map
@@ -77,7 +62,7 @@ let check (vdecls, stmts) =
         let (id_ty, id_name') = check_id_typ id_name in
         let mt = type_of_identifier m_name in
           if (mt = Matrix && id_ty = Duple) then
-            (Int, SMatrixAccessVar(m_name, id_name'))
+            (Int, SMatrixAccessVar(m_name, (id_ty, id_name')))
           else
             raise (Failure ("tried to use matrix duple indexing with invalid types"))
       )
@@ -87,7 +72,7 @@ let check (vdecls, stmts) =
         IntLit l -> (Int, SIntLit l)
       | BoolLit l -> (Bool, SBoolLit l)
       | StringLit l -> (String, SStringLit l)
-      | IdRule i -> check_id_typ
+      | IdRule i -> let (typ, sx) = check_id_typ i in (typ, SIdRule(typ, sx))
       | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
       | DupleCreate(i, j) -> (Duple, SDupleCreate(i, j))
       | MatrixCreate(els) -> (Matrix, SMatrixCreate(els))
@@ -103,17 +88,12 @@ let check (vdecls, stmts) =
             | true -> (StructT(name), SStructCreate(name, fields))
             | _ -> raise (Failure ("struct object fields don't match struct type"))
       )
-      | Assign(id, e) -> (
-        let (r_ty, e') = check_expr e in
-        let (id_typ, id') = check_id_typ in
-        if (r_ty == Int && id_typ == Int) then
-          match id with
-            | VarId (var) -> (r_ty, SAssign(VarId (var), (r_ty, e')))
-            | StructFieldId(s_var, f_var) -> (f_ty, SAssign(StructFieldId(s_var, f_var), (f_ty, e')))
-            | MatrixAccessId(m_var, i, j) -> (r_ty, SAssign(MatrixAccessId(m_var, i, j), (r_ty, e')))
-            | MatrixAccessVarId(m_var, id_var) as m_id -> (r_ty, SAssign(m_id, (r_ty, e')))
-          else raise (Failure ("illegal assignment, types don't match up"))
-      )
+      | Assign(id, e) -> 
+        let (r_ty, _) as s_expr = check_expr e in
+        let (id_typ, _) as s_id = check_id_typ id in
+        if (id_typ == Int && r_ty == Int) then (* should we support more types than this? *)
+          (id_typ, SAssign(s_id, s_expr))
+        else raise (Failure ("illegal assignment, types don't match up"))
       | Binop(e1, op, e2) as e ->
         let (t1, e1') = check_expr e1
         and (t2, e2') = check_expr e2 in
