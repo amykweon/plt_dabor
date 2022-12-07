@@ -1,11 +1,12 @@
 # Arithmetic
-# vectors of different directions cannot be added together
+# vectors and integer cannot be added/subtracted together
 vector vector_1;
 vector vector_2;
 vector vector_3;
-vector_1 = horizontal(-1);
+int p;
+vector_1 = horizontal(1);
 vector_2 = vertical(1);
-vector_3 = vector_1 + vector_2;
+vector_3 = vector_1 + p;
 
 # Logical
 

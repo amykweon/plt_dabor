@@ -1,16 +1,16 @@
 # Arithmetic
 int x;
-x = (1 + 2) * 4;
 int y;
+x = (1 + 2) * 4;
 y = x % 3 -1;
 
 vector vector_1;
-vector_1 = horizontal(-1);
-vector_1 = vector_1 * 3;
 vector vector_2;
+vector vector_3;
+vector_1 = horizontal(1);
+vector_1 = vector_1 * 3;
 vector_2 = horizontal(2);
 vector_2 = vector_2 / 2;
-vector vector_3;
 vector_3 = vector_1 + vector_2;
 vector_3 = vector_1 - vector_2;
 
@@ -38,12 +38,12 @@ duple loc;
 vector vector_1;
 
 loc = (1, 1);
-pi = Piece {name: “king”, location: loc};
+pi = Piece {name: "king", location: loc};
 
 # test four directions
 vector_1 = horizontal(1);
 pi.location = pi.location move vector_1;
-vector_1 = vertical(-1);
+vector_1 = vertical(1);
 pi.location = pi.location move vector_1;
 vector_1 = diagonalLeft(1);
 pi.location = pi.location move vector_1;

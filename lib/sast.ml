@@ -55,7 +55,7 @@ let rec string_of_sexpr (t, e) =
     | SAssign(v, e) -> string_sid_typ v ^ " = " ^ string_of_sexpr e
     | SVectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_sexpr num
     | SMatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
-    | SStructCreate(id, l) -> id ^ " = {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
+    | SStructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
     | SDupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
   ) ^ ")"
 

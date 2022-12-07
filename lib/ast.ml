@@ -84,11 +84,11 @@ let rec string_of_expr = function
   | IdRule(v) -> string_id_typ v
   | Binop(e1, o, e2) ->
     string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
-  | Unop(o, e) -> string_of_expr e ^ " " ^ string_of_op o
+  | Unop(o, e) ->  string_of_op o ^ " " ^ string_of_expr e
   | Assign(v, e) -> string_id_typ v ^ " = " ^ string_of_expr e
   | VectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_expr num
   | MatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
-  | StructCreate(id, l) -> id ^ " = {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
+  | StructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
   | DupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
 and struct_of_struct_e (id, e) = id ^ " : " ^ string_of_expr e ^ ";\n"
 

@@ -37,7 +37,7 @@ vdecl_list_rule:
 
 vdecl_rule:
    typ_rule ID SEMI                          { Bind($1, $2) }
- | STRUCT ID LBRACE struct_def_list RBRACE   { StructDef($2, $4) }
+ | STRUCT ID LBRACE struct_def_list RBRACE SEMI   { StructDef($2, $4) }
 
 typ_rule:
    INT         { Int  }
@@ -69,9 +69,7 @@ stmt_rule:
 
 rest_of_list_rule:
    INT_LITERAL COMMA rest_of_list_rule                 { $1::$3 }
-// | STRING_LITERAL COMMA rest_of_list_rule              { $1::$3 }
  | INT_LITERAL RBRACK /* no empty lists allowed */     { $1::[] }
-// | STRING_LITERAL RBRACK /* no empty lists allowed */  { $1::[] }
 
 list_rule:
    LBRACK rest_of_list_rule { $2 }

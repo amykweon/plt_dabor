@@ -7,13 +7,12 @@ let alpha = ['a'-'z' 'A'-'Z']
 let int = digit+
 let id = alpha (digit | alpha | '_')*
 
-let ascii_char = ['\x00' - '\x7F']
-let string = '"' ((ascii_char)* as s) '"'
+let string = '"' ((digit | alpha | '_' | ' ')* as s) '"'
 
 let newline = '\n' 
 
 rule token = parse
- [' ' '\t' '\r'] { token lexbuf }
+ [' ' '\t' '\r' '\n'] { token lexbuf }
 | "//" { comment lexbuf}
 | "vector" { VECTOR }
 | "diagonalLeft" { DIAGLEFT }
