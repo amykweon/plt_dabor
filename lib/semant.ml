@@ -28,11 +28,11 @@ let check (program: program) =
     try StringMap.find s symbols
     with Not_found -> raise (Failure ("undeclared identifier " ^ s))
   in
-  (* Raise an exception if the given rvalue type cannot be assigned to
+  (* (* Raise an exception if the given rvalue type cannot be assigned to
        the given lvalue type *)
   let check_assign lvaluet rvaluet err =
     if lvaluet = rvaluet then lvaluet else raise (Failure err)
-  in
+  in *)
 
   let get_struct_info s_name =
     try StringMap.find s_name struct_field_info
@@ -48,17 +48,24 @@ let check (program: program) =
   
   let rec check_id_typ = function
         Id var -> (type_of_identifier var, SId var)
-      | StructAccess(name, field_name) -> (
-        let s_info = get_struct_info name in
-        let f_type = get_field_type field_name s_info in
-          match f_type with
-          | Some f_ty -> (f_ty, SStructAccess(name, field_name))
-          | None -> raise (Failure ("struct doesn't have field matching given name"))
+      | StructAccess(var_name, field_name) -> (
+        let name_type = type_of_identifier var_name in
+          match name_type with
+          | StructT s_type -> let s_info = get_struct_info s_type in 
+            let f_type = get_field_type field_name s_info in (
+              match f_type with
+              | Some f_ty -> (f_ty, SStructAccess(var_name, field_name))
+              | None -> raise (Failure ("struct doesn't have field matching given name"))
+          )
+          | _ -> raise (Failure ("trying to use a non struct variable as a struct"))
       )
       | MatrixAccess(var, i, j) -> 
         let lt = type_of_identifier var in
         let err = "trying to use non-matrix variable as matrix" in
-        (check_assign lt Int err, SMatrixAccess(var, i, j))
+        if (lt != Matrix)
+          then raise (Failure err)
+        else
+        (Int, SMatrixAccess(var, i, j))
       | MatrixAccessVar(m_name, id_name) -> (
         let (id_ty, id_name') = check_id_typ id_name in
         let mt = type_of_identifier m_name in
@@ -76,7 +83,11 @@ let check (program: program) =
       | IdRule i -> let (typ, sx) = check_id_typ i in (typ, SIdRule(typ, sx))
       | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
       | DupleCreate(i, j) -> (Duple, SDupleCreate(i, j))
-      | MatrixCreate(els) -> (Matrix, SMatrixCreate(els))
+      | MatrixCreate(els) -> 
+        let good = List.for_all (fun l -> (List.length l) = (List.length (List.nth els 0))) els in
+        if good then 
+          (Matrix, SMatrixCreate(els))
+        else raise (Failure ("tried to init matrix with differing row lengths"))
       | StructCreate(name, fields) -> (
         let check_struct_object_creation ((s_f_name, s_f_type)) ((o_f_name, o_f_expr)) =
           let (o_f_type, _) = check_expr o_f_expr in
@@ -92,9 +103,9 @@ let check (program: program) =
       | Assign(id, e) -> 
         let (r_ty, _) as s_expr = check_expr e in
         let (id_typ, _) as s_id = check_id_typ id in
-        if (id_typ == Int && r_ty == Int) then (* should we support more types than this? *)
+        if (id_typ = r_ty) then (* should we support more types than this? *)
           (id_typ, SAssign(s_id, s_expr))
-        else raise (Failure ("illegal assignment, types don't match up"))
+        else raise (Failure ("illegal assignment, types don't match up, LHS type: " ^ string_of_typ id_typ ^ " RHS type: " ^ string_of_typ r_ty))
       | Binop(e1, op, e2) as e ->
         let (t1, e1') = check_expr e1
         and (t2, e2') = check_expr e2 in
@@ -102,19 +113,25 @@ let check (program: program) =
                   string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
                   string_of_typ t2 ^ " in " ^ string_of_expr e
         in
-        (* All binary operators require operands of the same type*)
+        (* Most binary operators require operands of the same type*)
         if t1 = t2 then
           (* Determine expression type based on operator and operand types *)
           let t = match op with
-              Add | Sub when (t1 = Int) -> Int
+              Add | Sub | Multi | Divide | Mod when (t1 = Int) -> Int
             | Add | Sub when (t1 = Vector) -> Vector
             | Equal | Neq -> Bool
-            | Less when t1 = Int -> Bool
-            | And | Or when t1 = Bool -> Bool
+            | Less | EqLess | Greater | EqGreater when t1 = Int -> Bool
+            | And | Or | Not when t1 = Bool -> Bool
             | _ -> raise (Failure err)
           in
           (t, SBinop((t1, e1'), op, (t2, e2')))
-        else raise (Failure err)
+        else 
+          if ((t1 = Vector && t2 = Int) || (t2 = Vector && t1 = Int)) then
+            match op with
+              Multi | Divide -> (Vector, SBinop((t1, e1'), op, (t2, e2')))
+            | _ -> raise (Failure err)
+          else  
+            raise (Failure err)
       | Unop(op, e1) -> let (t1, e1') = check_expr e1 in (t1, SUnop (op, (t1, e1')))
     in
 

@@ -1,31 +1,36 @@
-# Arithmetic
+
 int x;
 int y;
-x = (1 + 2) * 4;
-y = x % 3 -1;
 
 vector vector_1;
 vector vector_2;
 vector vector_3;
-vector_1 = horizontal(1);
-vector_1 = vector_1 * 3;
-vector_2 = horizontal(2);
-vector_2 = vector_2 / 2;
-vector_3 = vector_1 + vector_2;
-vector_3 = vector_1 - vector_2;
 
-# Equivalance
 bool b1;
 bool b2;
 bool b3;
 bool b4;
+bool b5;
+
+// Arithmetic
+x = (1 + 2) * 4;
+y = x % 3 -1;
+
+vector_1 = horizontal(1);
+vector_1 = vector_1 * 3;
+vector_2 = horizontal(2);
+
+vector_2 = vector_2 / 2;
+vector_3 = vector_1 + vector_2;
+vector_3 = vector_1 - vector_2;
+
+// Equivalance
 b1 = (vector_1 == vector_2);
 b2 = (1 > 2);
 b3 = (3<=4);
 b4 = ((1,2) != (2,1));
 
-# Logical
-bool b5;
+//Logical
 b5 = b1 and b2;
 b5 = b1 or b2;
 b5 = not b1;
