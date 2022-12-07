@@ -12,6 +12,11 @@ bool b3;
 bool b4;
 bool b5;
 
+struct Piece {name: string, location: duple};
+
+struct Piece pi;
+duple loc;
+
 // Arithmetic
 x = (1 + 2) * 4;
 y = x % 3 -1;
@@ -35,17 +40,11 @@ b5 = b1 and b2;
 b5 = b1 or b2;
 b5 = not b1;
 
-# Move Function
-struct Piece {name: string, location: duple};
-
-struct Piece pi;
-duple loc;
-vector vector_1;
-
+// Move Function
 loc = (1, 1);
 pi = Piece {name: "king", location: loc};
 
-# test four directions
+// test four directions
 vector_1 = horizontal(1);
 pi.location = pi.location move vector_1;
 vector_1 = vertical(1);

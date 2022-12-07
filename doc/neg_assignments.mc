@@ -18,7 +18,7 @@ b = True;
 matrix board1;
 board1 =  matrix_create([[0, 1, 0], [1], [2, 1]]);
 
-//access value out of matrix
+//access value out of matrix (haven't implemented this yet)
 matrix board2;
 board2 = matrix_create([[0, 1, 0],[1, 0, 1],[0, 1, 0]]);
 board2[10,10] = 1;

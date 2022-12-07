@@ -26,5 +26,3 @@ vector_1 = diagonalRight(1);
 
 dir = (10, 8);
 
-
-//

@@ -23,6 +23,7 @@ let check (program: program) =
     | _ -> map
   in
   let symbols = List.fold_left symbol_handler StringMap.empty vdecls in
+  (* let matrix_info = StringMap.empty in *)
 
   let type_of_identifier s =
     try StringMap.find s symbols
@@ -65,6 +66,7 @@ let check (program: program) =
         if (lt != Matrix)
           then raise (Failure err)
         else
+
         (Int, SMatrixAccess(var, i, j))
       | MatrixAccessVar(m_name, id_name) -> (
         let (id_ty, id_name') = check_id_typ id_name in
@@ -103,7 +105,12 @@ let check (program: program) =
       | Assign(id, e) -> 
         let (r_ty, _) as s_expr = check_expr e in
         let (id_typ, _) as s_id = check_id_typ id in
-        if (id_typ = r_ty) then (* should we support more types than this? *)
+        if (id_typ = r_ty) then
+          (* match name, expr' with
+            | SId m_name, SMatrixCreate matrix -> 
+              let matrix_info = StringMap.add m_name (List.length matrix, List.length (List.nth matrix 0)) matrix_info in
+              (id_typ, SAssign(s_id, s_expr))
+            | _ -> (id_typ, SAssign(s_id, s_expr)) *)
           (id_typ, SAssign(s_id, s_expr))
         else raise (Failure ("illegal assignment, types don't match up, LHS type: " ^ string_of_typ id_typ ^ " RHS type: " ^ string_of_typ r_ty))
       | Binop(e1, op, e2) as e ->
@@ -125,8 +132,12 @@ let check (program: program) =
             | _ -> raise (Failure err)
           in
           (t, SBinop((t1, e1'), op, (t2, e2')))
-        else 
-          if ((t1 = Vector && t2 = Int) || (t2 = Vector && t1 = Int)) then
+        else (* Below covers special cases where binary operator is used between different types *)
+          if (t1 = Duple && t2 = Vector) then
+            match op with
+              Move -> (Duple, SBinop((t1, e1'), op, (t2, e2')))
+            | _ -> raise (Failure err)
+          else if ((t1 = Vector && t2 = Int) || (t2 = Vector && t1 = Int)) then
             match op with
               Multi | Divide -> (Vector, SBinop((t1, e1'), op, (t2, e2')))
             | _ -> raise (Failure err)
