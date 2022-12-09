@@ -2,10 +2,6 @@
 
 module L = Llvm
 module A = Ast
-module S = Sast
-module E = Semant
-open Ast
-open Llvm
 open Sast
 
 module StringMap = Map.Make(String)
@@ -14,17 +10,16 @@ let translate (globals, stmts) =
     let context = L.global_context () in
     let the_module = L.create_module context "dabor" in
     
-    (* let i32_t  = L.i32_type context
+    let i32_t  = L.i32_type context
     and i8_t   = L.i8_type context
     and i1_t   = L.i1_type context
-    and string_t = (L.pointer_type (L.i8_type context)) in
-    *)
+    (* and string_t = (L.pointer_type (L.i8_type context))*) in
   
   (* given type, generate size *)
   let ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
-    | A.String-> L.pointer_type i8_t
+    (* | A.String-> L.pointer_type i8_t *)
   in
 
   (* Create a map of global variables after creating each *)
@@ -51,27 +46,27 @@ let rec ltype_of_typ = (function
     | A.RefT(_,t) ->  L.pointer_type (ltype_of_typ t)
     | A.StructT(t) -> (try let t = snd (StringHash.find structMap t) in L.pointer_type t with Not_found -> raise(Failure(t)))
     | _ -> void_t)  in
-  *)
+*)
 
 (* fill in the stmts *)
-let build_stmt_body stmts =
-  let builder = L.builder_at_end context (L.entry_block stmts) in
+let build_main_body stmts =
+  let main_type = L.function_type (ltype_of_typ void) void in
+  let the_main = L.define_function "main" main_type the_module in
+  let builder = L.builder_at_end context (L.entry_block the_main) in
 
   let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
 
-  let lookup n = try StringMap.find n global_vars in
+  let lookup n = StringMap.find n global_vars in
 
-  (* IdRule implementation *)
+  (* IdRule implementation
   let rec build_idrule builder ((_, i): sid_typ) = match i with
     ...
   in
+  *)
 
   let rec build_expr builder ((_, e) : sexpr) = match e with
         SLiteral i  -> L.const_int i32_t i
       | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
-      | SStringLit of s -> "TODO"
-      | SIdRule id_t -> "TODO"
-      | SVectorCreate (dir, e) -> "TODO"
       | SBinop(e1, op, e2) as e ->
           let e1' = build_expr builder e1
           and e2' = build_expr builder e2 in
@@ -91,10 +86,15 @@ let build_stmt_body stmts =
       | SUnop(op, e) ->
           let e' = build_expr builder e in
           L.build_fneq e' "tmp" builder
-      | SAssign (id_t, e) -> "TODO"
-      | SMatrixCreate (int_list) -> "TODO"
-      | SStructCreate (s, s_l) -> "TODO"
-      | SDupleCreate (i1, i2) -> "TODO"
+      (*
+      | SStringLit s -> ignore("TODO")
+      | SIdRule id_t -> ignore("TODO")
+      | SVectorCreate (dir, e) -> ignore("TODO")
+      | SAssign (id_t, e) -> ignore("TODO")
+      | SMatrixCreate (int_list) -> ignore("TODO")
+      | SStructCreate (s, s_l) -> ignore("TODO")
+      | SDupleCreate (i1, i2) -> ignore("TODO")
+      *)
       in
         
   let add_terminal builder instr =
@@ -136,10 +136,10 @@ let build_stmt_body stmts =
           L.builder_at_end context merge_bb
       in
 
-    let func_builder = build_stmt builder (SBlock stmts) in
+    let main_builder = build_stmt builder (SBlock stmts) in
 
-  (* Add a return if the last block falls off the end *)
-    add_terminal func_builder (L.build_ret (L.const_int i32_t 0))
+    (* Add a return if the last block falls off the end *)
+    add_terminal main_builder (L.build_ret (L.const_int i32_t 0))
 
-List.iter build_stmt_body stmts;
+List.iter build_main_body stmts;
 the_module
