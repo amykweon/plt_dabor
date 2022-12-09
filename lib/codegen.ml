@@ -19,6 +19,14 @@ let translate (functions) =
     and float_t = L.double_type context
     and string_t = (L.pointer_type (L.i8_type context))
     and void_t = L.void_type context in
+    
+let rec ltype_of_typ = (function
+      A.DataT(t) -> ltype_of_primitive t
+    | A.StringT -> string_t
+    | A.ArrayT(t,_) -> L.pointer_type (ltype_of_typ t)
+    | A.RefT(_,t) ->  L.pointer_type (ltype_of_typ t)
+    | A.StructT(t) -> (try let t = snd (StringHash.find structMap t) in L.pointer_type t with Not_found -> raise(Failure(t)))
+    | _ -> void_t)  in
 
 let rec check_expr = function
     | Binop(e1, op, e2) as e ->
