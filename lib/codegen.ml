@@ -12,20 +12,30 @@ module StringMap = Map.Make(String)
 
 let translate (functions) = 
     let context = L.global_context () in
-    let the_module = L.create_module context "dabor"
-    and i32_t  = L.i32_type context
+    let the_module = L.create_module context "dabor" in
+    
+    let i32_t  = L.i32_type context
     and i8_t   = L.i8_type context
     and i1_t   = L.i1_type context
-    and float_t = L.double_type context
-    and string_t = (L.pointer_type (L.i8_type context))
-    and void_t = L.void_type context in
+    and string_t = (L.pointer_type (L.i8_type context)) in
     
 let ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
-    | A.Float -> float_t
     | A.String-> L.pointer_type i8_t
-    | A.Void  -> void_t in
+  in
+
+  (* Create a map of global variables after creating each *)
+  let global_vars : L.llvalue StringMap.t =
+    let global_var m (t, n) =
+      let init = L.const_int (ltype_of_typ t) 0
+      in StringMap.add n (L.define_global n init the_module) m in
+    List.fold_left global_var StringMap.empty globals in
+
+  let printf_t : L.lltype =
+    L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
+  let printf_func : L.llvalue =
+    L.declare_function "printf" printf_t the_module in
     
 let rec ltype_of_typ = (function
       A.DataT(t) -> ltype_of_primitive t
@@ -35,17 +45,15 @@ let rec ltype_of_typ = (function
     | A.StructT(t) -> (try let t = snd (StringHash.find structMap t) in L.pointer_type t with Not_found -> raise(Failure(t)))
     | _ -> void_t)  in
 
-let rec check_expr = function
-    | Binop(e1, op, e2) as e ->
-        let (t1, e1') = check_expr e1
-        and (t2, e2') = check_expr e2 in
-        let err = "illegal binary operator " ^
-                  string_of_typ t1 ^ " " ^ string_of_op op ^ " " ^
-                  string_of_typ t2 ^ " in " ^ string_of_expr e
-        in
-    
-        if t1 = t2 then
-          let t = match op with
+let lookup n = try StringMap.find n global_vars in
+
+let rec build_expr builder ((_, e) : sexpr) = match e with
+      SLiteral i  -> L.const_int i32_t i
+    | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
+    | SBinop(e1, op, e2) as e ->
+        let e1' = expr builder e1
+        and e2' = expr builder e2 in
+        (match op with
             | A.Add     -> L.build_fadd
             | A.Sub     -> L.build_fsub
             | A.Mult    -> L.build_fmul
@@ -54,18 +62,23 @@ let rec check_expr = function
             | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
             | A.Neq     -> L.build_fcmp L.Fcmp.One
             | A.Less    -> L.build_fcmp L.Fcmp.Olt
-            | A.Leq     -> L.build_fcmp L.Fcmp.Oleq
+            | A.EqLess     -> L.build_fcmp L.Fcmp.Oleq
             | A.Greater -> L.build_fcmp L.Fcmp.Ogt
-            | A.Geq     -> L.build_fcmp L.Fcmp.Ogeq
-
-    | SUnop(op, (t1, e1') ) ->
+            | A.EqGreater     -> L.build_fcmp L.Fcmp.Ogeq
+          ) e1' e2' "tmp" builder
+    | SUnop(op, e) ->
           let e' = expr builder e in
             (match op with
             | A.Neg     -> L.build_fneq 
             | A.Neg     -> L.build_neq
             | A.Not     -> L.build_not
+            ) e' "tmp" builder
+    in
 	    
-(* Need to add functions builder *) 
+let add_terminal builder instr =
+      match L.block_terminator (L.insertion_block builder) with
+        Some _ -> ()
+      | None -> ignore (instr builder) in
 
 let rec stmt builder = function
       SIf (predicate, then_stmt, else_stmt) ->
@@ -101,3 +114,5 @@ let rec stmt builder = function
       
     in
 (*  call the function builder for each function *)
+
+  the_module
