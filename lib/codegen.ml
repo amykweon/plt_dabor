@@ -62,7 +62,7 @@ let rec build_expr builder ((_, e) : sexpr) = match e with
             | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
             | A.Neq     -> L.build_fcmp L.Fcmp.One
             | A.Less    -> L.build_fcmp L.Fcmp.Olt
-            | A.EqLess     -> L.build_fcmp L.Fcmp.Oleq
+            | A.EqLess  -> L.build_fcmp L.Fcmp.Oleq
             | A.Greater -> L.build_fcmp L.Fcmp.Ogt
             | A.EqGreater     -> L.build_fcmp L.Fcmp.Ogeq
           ) e1' e2' "tmp" builder
