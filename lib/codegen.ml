@@ -66,7 +66,6 @@ let rec check_expr = function
             | A.Not     -> L.build_not
             
 let rec stmt builder = function
-	SBlock sl -> List.fold_left stmt builder sl
       SIf (predicate, then_stmt, else_stmt) ->
          let bool_val = expr builder predicate in
 	     let merge_bb = L.append_block context "merge" the_function in
