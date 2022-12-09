@@ -10,6 +10,16 @@ open Sast
 
 module StringMap = Map.Make(String)
 
+let translate (functions) = 
+    let context = L.global_context () in
+    let the_module = L.create_module context "dabor"
+    and i32_t  = L.i32_type context
+    and i8_t   = L.i8_type context
+    and i1_t   = L.i1_type context
+    and float_t = L.double_type context
+    and string_t = (L.pointer_type (L.i8_type context))
+    and void_t = L.void_type context in
+
 let rec check_expr = function
     | Binop(e1, op, e2) as e ->
         let (t1, e1') = check_expr e1
