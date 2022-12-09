@@ -64,7 +64,7 @@ let rec check_expr = function
             | A.Neg     -> L.build_fneq 
             | A.Neg     -> L.build_neq
             | A.Not     -> L.build_not
-            
+(* Need to add functions builder *)  
 let rec stmt builder = function
       SIf (predicate, then_stmt, else_stmt) ->
          let bool_val = expr builder predicate in
@@ -98,3 +98,4 @@ let rec stmt builder = function
 	  L.builder_at_end context merge_bb
       
     in
+(*  call the function builder for each function *)
