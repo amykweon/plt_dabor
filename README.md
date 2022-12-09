@@ -37,3 +37,6 @@ Nicholas Greenspan:
 Annie Song:
 - debugging on compilation error of basic parser.mly, scanner.mll, ast.ml
 - general system (compilation code) for code testing
+
+Khaela Harrod:
+- implementation of codegen.ml
