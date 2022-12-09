@@ -20,6 +20,13 @@ let translate (functions) =
     and string_t = (L.pointer_type (L.i8_type context))
     and void_t = L.void_type context in
     
+let ltype_of_typ = function
+      A.Int   -> i32_t
+    | A.Bool  -> i1_t
+    | A.Float -> float_t
+    | A.String-> L.pointer_type i8_t
+    | A.Void  -> void_t in
+    
 let rec ltype_of_typ = (function
       A.DataT(t) -> ltype_of_primitive t
     | A.StringT -> string_t
