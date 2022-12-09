@@ -32,6 +32,7 @@ type sprogram = {
    body: sstmt list;
 }
 
+
 (* Pretty-printing functions *)
 let rec string_sid_typ (t, i)=
 "(" ^ string_of_typ t ^ " : " ^ (match i with
