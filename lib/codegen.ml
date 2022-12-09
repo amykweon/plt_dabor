@@ -10,7 +10,7 @@ open Sast
 
 module StringMap = Map.Make(String)
 
-let translate (functions) = 
+let translate (globals, stmts) = 
     let context = L.global_context () in
     let the_module = L.create_module context "dabor" in
     
@@ -36,7 +36,7 @@ let ltype_of_typ = function
     L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
   let printf_func : L.llvalue =
     L.declare_function "printf" printf_t the_module in
-    
+ 
 let rec ltype_of_typ = (function
       A.DataT(t) -> ltype_of_primitive t
     | A.StringT -> string_t
@@ -46,6 +46,11 @@ let rec ltype_of_typ = (function
     | _ -> void_t)  in
 
 let lookup n = try StringMap.find n global_vars in
+
+let build_stmt_body stmts =
+    let builder = L.builder_at_end context (L.entry_block stmts) in
+
+    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
 
 let rec build_expr builder ((_, e) : sexpr) = match e with
       SLiteral i  -> L.const_int i32_t i
@@ -113,6 +118,6 @@ let rec stmt builder = function
 	  L.builder_at_end context merge_bb
       
     in
-(*  call the function builder for each function *)
 
+  List.iter build_stmt_body stmts;
   the_module
