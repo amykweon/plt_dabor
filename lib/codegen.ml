@@ -54,7 +54,7 @@ let rec check_expr = function
             | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
             | A.Neq     -> L.build_fcmp L.Fcmp.One
             | A.Less    -> L.build_fcmp L.Fcmp.Olt
-            | A.Leq     -> L.build_fcmp L.Fcmp.Oleq
+            | A.EqLess  -> L.build_fcmp L.Fcmp.Oleq
             | A.Greater -> L.build_fcmp L.Fcmp.Ogt
             | A.Geq     -> L.build_fcmp L.Fcmp.Ogeq
 
