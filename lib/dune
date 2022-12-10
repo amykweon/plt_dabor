@@ -1,7 +1,13 @@
 (library
  (name dabor)
  (libraries llvm)
- (flags (:standard -w +a-4)))
+ (flags (:standard -w +a-4))
+ (foreign_stubs (language c) (names printbig)))
+
+(install
+ (files printbig.o)
+ (section bin)
+ (package dabor))
 
 (ocamllex scanner)
 

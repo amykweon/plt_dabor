@@ -13,13 +13,15 @@ let translate (globals, stmts) =
     let i32_t  = L.i32_type context
     and i8_t   = L.i8_type context
     and i1_t   = L.i1_type context
-    (* and string_t = (L.pointer_type (L.i8_type context))*) in
+    and string_t = (L.pointer_type (L.i8_type context))
+    in
   
   (* given type, generate size *)
   let ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
-    (* | A.String-> L.pointer_type i8_t *)
+    | A.String-> L.pointer_type i8_t
+    | _ -> L.void_type
   in
 
   (* Create a map of global variables after creating each *)
@@ -87,6 +89,10 @@ let rec ltype_of_typ = (function
         | SUnop(op, e) ->
             let e' = build_expr builder e in
             L.build_fneq e' "tmp" builder
+        | SCall ("print", [e]) | SCall ("printb", [e]) ->
+	          L.build_call printf_func [| int_format_str ; (expr builder e) |]
+	          "printf" builder
+
         (*
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
         | SIdRule id_t -> ignore("TODO")
