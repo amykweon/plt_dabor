@@ -14,14 +14,15 @@ let translate (globals, stmts) =
     and i8_t   = L.i8_type context
     and i1_t   = L.i1_type context
     and string_t = (L.pointer_type (L.i8_type context))
+    and void_t = L.void_type context
     in
   
   (* given type, generate size *)
   let ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
-    | A.String-> L.pointer_type i8_t
-    | _ -> L.void_type
+    | A.String-> string_t
+    | _ -> void_t
   in
 
   (* Create a map of global variables after creating each *)
@@ -53,7 +54,7 @@ let rec ltype_of_typ = (function
 
   (* fill in the stmts *)
   let build_main_body stmts =
-    let main_type = L.function_type (ltype_of_typ L.void_type) L.void_type in
+    let main_type = L.function_type void_t void_t in
     let the_main = L.define_function "main" main_type the_module in
     let builder = L.builder_at_end context (L.entry_block the_main) in
 
