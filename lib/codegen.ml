@@ -13,13 +13,16 @@ let translate (globals, stmts) =
     let i32_t  = L.i32_type context
     and i8_t   = L.i8_type context
     and i1_t   = L.i1_type context
-    (* and string_t = (L.pointer_type (L.i8_type context))*) in
+    and string_t = (L.pointer_type (L.i8_type context))
+    and void_t = L.void_type context
+    in
   
   (* given type, generate size *)
   let ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
-    (* | A.String-> L.pointer_type i8_t *)
+    | A.String-> string_t
+    | _ -> void_t
   in
 
   (* Create a map of global variables after creating each *)
@@ -51,7 +54,7 @@ let rec ltype_of_typ = (function
 
   (* fill in the stmts *)
   let build_main_body stmts =
-    let main_type = L.function_type (ltype_of_typ L.void_type) L.void_type in
+    let main_type = L.function_type void_t (Array.of_list [void_t]) in
     let the_main = L.define_function "main" main_type the_module in
     let builder = L.builder_at_end context (L.entry_block the_main) in
 
@@ -66,7 +69,7 @@ let rec ltype_of_typ = (function
     *)
 
     let rec build_expr builder ((_, e) : sexpr) = match e with
-          SLiteral i  -> L.const_int i32_t i
+          SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SBinop(e1, op, e2) as e ->
             let e1' = build_expr builder e1
@@ -74,20 +77,23 @@ let rec ltype_of_typ = (function
             (match op with
                 A.Add     -> L.build_fadd
               | A.Sub     -> L.build_fsub
-              | A.Mult    -> L.build_fmul
-              | A.Div     -> L.build_fdiv 
+              | A.Multi   -> L.build_fmul
+              | A.Divide  -> L.build_fdiv 
               | A.Mod     -> L.build_fmod
               | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
               | A.Neq     -> L.build_fcmp L.Fcmp.One
               | A.Less    -> L.build_fcmp L.Fcmp.Olt
-              | A.EqLess  -> L.build_fcmp L.Fcmp.Oleq
+              | A.EqLess  -> L.build_fcmp L.Fcmp.Oeql
               | A.Greater -> L.build_fcmp L.Fcmp.Ogt
-              | A.EqGreater     -> L.build_fcmp L.Fcmp.Ogeq
+              | A.EqGreater     -> L.build_fcmp L.Fcmp.Oeqg
             ) e1' e2' "tmp" builder
         | SUnop(op, e) ->
             let e' = build_expr builder e in
             L.build_fneq e' "tmp" builder
         (*
+        | SCall ("print", [e]) | SCall ("printb", [e]) ->
+	          L.build_call printf_func [| int_format_str ; (expr builder e) |]
+	          "printf" builder
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
         | SIdRule id_t -> ignore("TODO")
         | SAssign (id_t, e) -> ignore("TODO")
@@ -96,7 +102,6 @@ let rec ltype_of_typ = (function
         | SDupleCreate (i1, i2) -> ignore("TODO")
         | SVectorCreate (dir, e) -> ignore("TODO")
         *)
-        in
           
     let add_terminal builder instr =
         match L.block_terminator (L.insertion_block builder) with
