@@ -54,7 +54,7 @@ let rec ltype_of_typ = (function
 
   (* fill in the stmts *)
   let build_main_body stmts =
-    let main_type = L.function_type void_t void_t in
+    let main_type = L.function_type void_t (Array.of_list [void_t]) in
     let the_main = L.define_function "main" main_type the_module in
     let builder = L.builder_at_end context (L.entry_block the_main) in
 
@@ -69,7 +69,7 @@ let rec ltype_of_typ = (function
     *)
 
     let rec build_expr builder ((_, e) : sexpr) = match e with
-          SLiteral i  -> L.const_int i32_t i
+          SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SBinop(e1, op, e2) as e ->
             let e1' = build_expr builder e1
@@ -77,8 +77,8 @@ let rec ltype_of_typ = (function
             (match op with
                 A.Add     -> L.build_fadd
               | A.Sub     -> L.build_fsub
-              | A.Mult    -> L.build_fmul
-              | A.Div     -> L.build_fdiv 
+              | A.Multi    -> L.build_fmul
+              | A.Divide     -> L.build_fdiv 
               | A.Mod     -> L.build_fmod
               | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
               | A.Neq     -> L.build_fcmp L.Fcmp.One
@@ -90,11 +90,10 @@ let rec ltype_of_typ = (function
         | SUnop(op, e) ->
             let e' = build_expr builder e in
             L.build_fneq e' "tmp" builder
+        (*
         | SCall ("print", [e]) | SCall ("printb", [e]) ->
 	          L.build_call printf_func [| int_format_str ; (expr builder e) |]
 	          "printf" builder
-
-        (*
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
         | SIdRule id_t -> ignore("TODO")
         | SAssign (id_t, e) -> ignore("TODO")
