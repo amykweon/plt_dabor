@@ -1,0 +1,3 @@
+(library
+ (name pdabor)
+ (libraries llvm llvm.analysis))
