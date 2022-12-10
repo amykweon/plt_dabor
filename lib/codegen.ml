@@ -24,6 +24,7 @@ let translate (globals, stmts) =
 
   (* Create a map of global variables after creating each *)
   let global_vars : L.llvalue StringMap.t =
+  (* add struct definition *)
     let global_var m (t, n) =
       let init = L.const_int (ltype_of_typ t) 0 in
       StringMap.add n (L.define_global n init the_module) m
@@ -48,98 +49,100 @@ let rec ltype_of_typ = (function
     | _ -> void_t)  in
 *)
 
-(* fill in the stmts *)
-let build_main_body stmts =
-  let main_type = L.function_type (ltype_of_typ void) void in
-  let the_main = L.define_function "main" main_type the_module in
-  let builder = L.builder_at_end context (L.entry_block the_main) in
+  (* fill in the stmts *)
+  let build_main_body stmts =
+    let main_type = L.function_type (ltype_of_typ L.void_type) L.void_type in
+    let the_main = L.define_function "main" main_type the_module in
+    let builder = L.builder_at_end context (L.entry_block the_main) in
 
-  let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
+    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
 
-  let lookup n = StringMap.find n global_vars in
+    let lookup n = StringMap.find n global_vars in
 
-  (* IdRule implementation
-  let rec build_idrule builder ((_, i): sid_typ) = match i with
-    ...
+    (* IdRule implementation
+    let rec build_idrule builder ((_, i): sid_typ) = match i with
+      ...
+    in
+    *)
+
+    let rec build_expr builder ((_, e) : sexpr) = match e with
+          SLiteral i  -> L.const_int i32_t i
+        | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
+        | SBinop(e1, op, e2) as e ->
+            let e1' = build_expr builder e1
+            and e2' = build_expr builder e2 in
+            (match op with
+                A.Add     -> L.build_fadd
+              | A.Sub     -> L.build_fsub
+              | A.Mult    -> L.build_fmul
+              | A.Div     -> L.build_fdiv 
+              | A.Mod     -> L.build_fmod
+              | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
+              | A.Neq     -> L.build_fcmp L.Fcmp.One
+              | A.Less    -> L.build_fcmp L.Fcmp.Olt
+              | A.EqLess  -> L.build_fcmp L.Fcmp.Oleq
+              | A.Greater -> L.build_fcmp L.Fcmp.Ogt
+              | A.EqGreater     -> L.build_fcmp L.Fcmp.Ogeq
+            ) e1' e2' "tmp" builder
+        | SUnop(op, e) ->
+            let e' = build_expr builder e in
+            L.build_fneq e' "tmp" builder
+        (*
+        | SStringLit s -> L.build_global_stringptr s "tmp" builder
+        | SIdRule id_t -> ignore("TODO")
+        | SAssign (id_t, e) -> ignore("TODO")
+        | SMatrixCreate (int_list) -> ignore("TODO")
+        | SStructCreate (s, s_l) -> ignore("TODO")
+        | SDupleCreate (i1, i2) -> ignore("TODO")
+        | SVectorCreate (dir, e) -> ignore("TODO")
+        *)
+        in
+          
+    let add_terminal builder instr =
+        match L.block_terminator (L.insertion_block builder) with
+          Some _ -> ()
+        | None -> ignore (instr builder) in
+
+    let rec build_stmt builder = function
+          SBlock sl -> List.fold_left build_stmt builder sl
+        | SExpr e -> ignore(build_expr builder e); builder
+        | SIf (predicate, then_stmt, else_stmt) ->
+            let bool_val = expr builder predicate in
+            let merge_bb = L.append_block context "merge" the_function in
+            let build_br_merge = L.build_br merge_bb in (* partial function *)
+
+            let then_bb = L.append_block context "then" the_function in
+            add_terminal (stmt (L.builder_at_end context then_bb) then_stmt)
+            build_br_merge;
+
+            let else_bb = L.append_block context "else" the_function in
+            add_terminal (stmt (L.builder_at_end context else_bb) else_stmt)
+            build_br_merge;
+
+            ignore(L.build_cond_br bool_val then_bb else_bb builder);
+            L.builder_at_end context merge_bb
+        | SWhile (predicate, body) ->
+            let pred_bb = L.append_block context "while" the_function in
+            ignore(L.build_br pred_bb builder);
+
+            let body_bb = L.append_block context "while_body" the_function in
+            add_terminal (stmt (L.builder_at_end context body_bb) body)
+            (L.build_br pred_bb);
+
+            let pred_builder = L.builder_at_end context pred_bb in
+            let bool_val = expr pred_builder predicate in
+
+            let merge_bb = L.append_block context "merge" the_function in
+            ignore(L.build_cond_br bool_val body_bb merge_bb pred_builder);
+            L.builder_at_end context merge_bb
+        in
+
+      let main_builder = build_stmt builder (SBlock stmts) in
+
+      (* Add a return if the last block falls off the end *)
+      add_terminal main_builder (L.build_ret (L.const_int i32_t 0))
+  
   in
-  *)
-
-  let rec build_expr builder ((_, e) : sexpr) = match e with
-        SLiteral i  -> L.const_int i32_t i
-      | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
-      | SBinop(e1, op, e2) as e ->
-          let e1' = build_expr builder e1
-          and e2' = build_expr builder e2 in
-          (match op with
-              A.Add     -> L.build_fadd
-            | A.Sub     -> L.build_fsub
-            | A.Mult    -> L.build_fmul
-            | A.Div     -> L.build_fdiv 
-            | A.Mod     -> L.build_fmod
-            | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
-            | A.Neq     -> L.build_fcmp L.Fcmp.One
-            | A.Less    -> L.build_fcmp L.Fcmp.Olt
-            | A.EqLess  -> L.build_fcmp L.Fcmp.Oleq
-            | A.Greater -> L.build_fcmp L.Fcmp.Ogt
-            | A.EqGreater     -> L.build_fcmp L.Fcmp.Ogeq
-          ) e1' e2' "tmp" builder
-      | SUnop(op, e) ->
-          let e' = build_expr builder e in
-          L.build_fneq e' "tmp" builder
-      (*
-      | SStringLit s -> ignore("TODO")
-      | SIdRule id_t -> ignore("TODO")
-      | SVectorCreate (dir, e) -> ignore("TODO")
-      | SAssign (id_t, e) -> ignore("TODO")
-      | SMatrixCreate (int_list) -> ignore("TODO")
-      | SStructCreate (s, s_l) -> ignore("TODO")
-      | SDupleCreate (i1, i2) -> ignore("TODO")
-      *)
-      in
-        
-  let add_terminal builder instr =
-      match L.block_terminator (L.insertion_block builder) with
-        Some _ -> ()
-      | None -> ignore (instr builder) in
-
-  let rec build_stmt builder = function
-        SBlock sl -> List.fold_left build_stmt builder sl
-      | SExpr e -> ignore(build_expr builder e); builder
-      | SIf (predicate, then_stmt, else_stmt) ->
-          let bool_val = expr builder predicate in
-          let merge_bb = L.append_block context "merge" the_function in
-          let build_br_merge = L.build_br merge_bb in (* partial function *)
-
-          let then_bb = L.append_block context "then" the_function in
-          add_terminal (stmt (L.builder_at_end context then_bb) then_stmt)
-          build_br_merge;
-
-          let else_bb = L.append_block context "else" the_function in
-          add_terminal (stmt (L.builder_at_end context else_bb) else_stmt)
-          build_br_merge;
-
-          ignore(L.build_cond_br bool_val then_bb else_bb builder);
-          L.builder_at_end context merge_bb
-      | SWhile (predicate, body) ->
-          let pred_bb = L.append_block context "while" the_function in
-          ignore(L.build_br pred_bb builder);
-
-          let body_bb = L.append_block context "while_body" the_function in
-          add_terminal (stmt (L.builder_at_end context body_bb) body)
-          (L.build_br pred_bb);
-
-          let pred_builder = L.builder_at_end context pred_bb in
-          let bool_val = expr pred_builder predicate in
-
-          let merge_bb = L.append_block context "merge" the_function in
-          ignore(L.build_cond_br bool_val body_bb merge_bb pred_builder);
-          L.builder_at_end context merge_bb
-      in
-
-    let main_builder = build_stmt builder (SBlock stmts) in
-
-    (* Add a return if the last block falls off the end *)
-    add_terminal main_builder (L.build_ret (L.const_int i32_t 0))
-
-List.iter build_main_body stmts;
-the_module
+  
+  List.iter build_main_body stmts;
+  the_module
