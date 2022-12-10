@@ -2,9 +2,9 @@
 
 (using menhir 2.1)
 
-(name plt_dabor)
+(name dabor)
 
-(generate_opam_files true)
+(generate_opam_files false)
 
 (source
  (github username/reponame))
@@ -18,10 +18,10 @@
 (documentation https://url/to/documentation)
 
 (package
- (name plt_dabor)
+ (name dabor)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune)
+ (depends ocaml dune llvm llvm.analysis)
  (tags
   (topics "to describe" your project)))
 

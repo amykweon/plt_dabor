@@ -1,6 +1,8 @@
-(ocamlyacc parser)
+(library
+ (name dabor)
+ (libraries llvm)
+ (flags (:standard -w +a-4)))
 
 (ocamllex scanner)
 
-(library
- (public_name plt_dabor))
+(ocamlyacc parser)
