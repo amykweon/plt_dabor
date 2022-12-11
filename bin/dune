@@ -1,8 +1,4 @@
 (executable
+ (public_name dabor)
  (name dabor)
- (libraries plt_dabor))
-
-(install
- (section bin)
- (files
-  (dabor.exe as dabor)))
+ (libraries dabor llvm.analysis))

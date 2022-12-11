@@ -1,2 +1,7 @@
-(test
- (name plt_dabor))
+(rule
+ (alias runtest)
+ (deps
+  (alias ../all)
+  (source_tree tests)
+ )
+ (action (run ./testall.sh)))
