@@ -57,7 +57,7 @@ let rec ltype_of_typ = (function
 
   (* fill in the stmts *)
   let build_main_body stmts =
-    let main_type = L.function_type void_t (Array.of_list [void_t]) in
+    let main_type = L.function_type i32_t (Array.of_list []) in
     let the_main = L.define_function "main" main_type the_module in
     let builder = L.builder_at_end context (L.entry_block the_main) in
 
