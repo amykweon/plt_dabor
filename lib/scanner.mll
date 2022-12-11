@@ -43,6 +43,8 @@ rule token = parse
 | "or" { OR }
 | "not" { NOT }
 
+| "print_int" { PRINTI }
+
 | '.' { DOT }
 
 | '(' { LPAREN } 

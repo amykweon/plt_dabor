@@ -144,7 +144,12 @@ let check (program: program) =
           else  
             raise (Failure err)
       | Unop(op, e1) -> let (t1, e1') = check_expr e1 in (t1, SUnop (op, (t1, e1')))
-    in
+      | PrintInt(e) -> 
+          let (r_ty, _) as s_expr = check_expr e in
+          if r_ty = Int then 
+          (Int, SPrintInt(s_expr))
+          else raise (Failure ("Cannot print data type other than int"))
+      in
 
     let check_bool_expr e =
       let (t, e') = check_expr e in

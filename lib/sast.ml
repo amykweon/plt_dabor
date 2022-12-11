@@ -20,6 +20,7 @@ and sx =
   | SMatrixCreate of (int list) list
   | SStructCreate of string * ((string * expr) list)
   | SDupleCreate of int * int
+  | SPrintInt of sexpr
 
 type sstmt =
     SBlock of sstmt list
@@ -58,6 +59,7 @@ let rec string_of_sexpr (t, e) =
     | SMatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
     | SStructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
     | SDupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
+    | SPrintInt(e) -> "print integer: " ^ string_of_sexpr e
   ) ^ ")"
 
 let rec string_of_sstmt = function

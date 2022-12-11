@@ -11,7 +11,7 @@ let translate (globals, stmts) =
     let the_module = L.create_module context "dabor" in
     
     let i32_t  = L.i32_type context
-    (* and i8_t   = L.i8_type context *)
+    and i8_t   = L.i8_type context
     and i1_t   = L.i1_type context
     and string_t = (L.pointer_type (L.i8_type context))
     and void_t = L.void_type context
@@ -35,14 +35,12 @@ let translate (globals, stmts) =
     List.fold_left global_var StringMap.empty globals 
   in
 
-  (*
   let printf_t : L.lltype =
     L.var_arg_function_type i32_t [| L.pointer_type i8_t |]
   in
   let printf_func : L.llvalue =
     L.declare_function "printf" printf_t the_module
   in
-  *)
 
 (*
 let rec ltype_of_typ = (function
@@ -60,9 +58,7 @@ let rec ltype_of_typ = (function
     let the_main = L.define_function "main" main_type the_module in
     let builder = L.builder_at_end context (L.entry_block the_main) in
 
-    (*
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
-    *)
     let lookup n = StringMap.find n global_vars in
     
     (* IdRule implementation *)
@@ -101,6 +97,8 @@ let rec ltype_of_typ = (function
                 A.Not -> L.build_not
               | _ -> raise (Failure "No other unary operation supported than NOT")
             )e' "tmp" builder
+        | SPrintInt (e) -> L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
+	          "printf" builder
         (*
         | SCall ("print", [e]) | SCall ("printb", [e]) ->
 	          L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
