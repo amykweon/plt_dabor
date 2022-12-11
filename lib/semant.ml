@@ -90,16 +90,18 @@ let check (program: program) =
         if good then 
           (Matrix, SMatrixCreate(els))
         else raise (Failure ("tried to init matrix with differing row lengths"))
-      | StructCreate(name, fields) -> (
+      | StructCreate(struct_name, fields) -> (
         let check_struct_object_creation ((s_f_name, s_f_type)) ((o_f_name, o_f_expr)) =
           let (o_f_type, _) = check_expr o_f_expr in
           s_f_name = o_f_name && s_f_type = o_f_type
         in
-        let s_info = get_struct_info name in
+        let s_info = get_struct_info struct_name in
         let correct_entries = List.map2 check_struct_object_creation s_info fields in
         let x = List.fold_left (fun x y -> x && y) true correct_entries in
           match x with 
-            | true -> (StructT(name), SStructCreate(name, fields))
+            | true -> 
+              let sfields = List.map (fun (name, field) -> let sfield = check_expr field in (name, sfield)) fields in
+              (StructT(struct_name), SStructCreate(struct_name, sfields))
             | _ -> raise (Failure ("struct object fields don't match struct type"))
       )
       | Assign(id, e) -> 
