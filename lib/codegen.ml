@@ -102,6 +102,16 @@ let rec ltype_of_typ = (function
             )e' "tmp" builder
         | SPrintInt (e) -> L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
 	          "printf" builder
+        | SAssign (((_, i)), e) -> 
+          (*
+          let id_n = build_idrule builder id_t in
+          *)
+          let id_n = match i with
+              SId s -> (lookup s)
+            | _ -> raise (Failure ("TODO: ot implemented yet"))
+            in
+          let e' = build_expr builder e in
+          ignore(L.build_store e' id_n builder); e'
         (*
         | SCall ("print", [e]) | SCall ("printb", [e]) ->
 	          L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
