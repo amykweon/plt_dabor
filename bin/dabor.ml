@@ -1,3 +1,5 @@
+open Dabor
+
 type action = Ast | Sast | LLVM_IR | Compile
 
 let () =
@@ -15,14 +17,14 @@ let () =
   Arg.parse speclist (fun filename -> channel := open_in filename) usage_msg;
   
   let lexbuf = Lexing.from_channel !channel in
-  let ast = Plt_dabor.Parser.program Plt_dabor.Scanner.token lexbuf in  
+  let ast = Parser.program_rule Scanner.token lexbuf in  
   match !action with
-    Ast -> print_string (Plt_dabor.Ast.string_of_program ast)
-  | _ -> let sast = Plt_dabor.Semant.check ast in
+    Ast -> print_string (Ast.string_of_program ast)
+  | _ -> let sast = Semant.check ast in
     match !action with
       Ast     -> ()
-    | Sast    -> print_string (Plt_dabor.Sast.string_of_sprogram sast)
-    | LLVM_IR -> print_string (Llvm.string_of_llmodule (Plt_dabor.Codegen.translate sast))
-    | Compile -> let m = Plt_dabor.Codegen.translate sast in
+    | Sast    -> print_string (Sast.string_of_sprogram sast)
+    | LLVM_IR -> print_string (Llvm.string_of_llmodule (Codegen.translate sast))
+    | Compile -> let m = Codegen.translate sast in
 	Llvm_analysis.assert_valid_module m;
 	print_string (Llvm.string_of_llmodule m)

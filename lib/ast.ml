@@ -16,7 +16,7 @@ type expr =
     IntLit of int
   | BoolLit of bool
   | StringLit of string
-  | IdRule of id_typ
+  | IdRule of id_typ 
   | VectorCreate of dir * expr
   | Binop of expr * op * expr
   | Unop of op * expr
@@ -120,4 +120,3 @@ let string_of_program fdecl =
   String.concat "" (List.map string_of_vdecl fdecl.locals) ^
   String.concat "\n" (List.map string_of_stmt fdecl.body) ^
   "\n"
-
