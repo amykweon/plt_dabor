@@ -77,15 +77,15 @@ let rec ltype_of_typ = (function
             (match op with
                 A.Add     -> L.build_fadd
               | A.Sub     -> L.build_fsub
-              | A.Multi    -> L.build_fmul
-              | A.Divide     -> L.build_fdiv 
+              | A.Multi   -> L.build_fmul
+              | A.Divide  -> L.build_fdiv 
               | A.Mod     -> L.build_fmod
               | A.Equal   -> L.build_fcmp L.Fcmp.Oeq
               | A.Neq     -> L.build_fcmp L.Fcmp.One
               | A.Less    -> L.build_fcmp L.Fcmp.Olt
-              | A.EqLess  -> L.build_fcmp L.Fcmp.Oleq
+              | A.EqLess  -> L.build_fcmp L.Fcmp.Oeql
               | A.Greater -> L.build_fcmp L.Fcmp.Ogt
-              | A.EqGreater     -> L.build_fcmp L.Fcmp.Ogeq
+              | A.EqGreater     -> L.build_fcmp L.Fcmp.Oeqg
             ) e1' e2' "tmp" builder
         | SUnop(op, e) ->
             let e' = build_expr builder e in
@@ -102,7 +102,6 @@ let rec ltype_of_typ = (function
         | SDupleCreate (i1, i2) -> ignore("TODO")
         | SVectorCreate (dir, e) -> ignore("TODO")
         *)
-        in
           
     let add_terminal builder instr =
         match L.block_terminator (L.insertion_block builder) with
