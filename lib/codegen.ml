@@ -28,9 +28,12 @@ let translate (globals, stmts) =
   (* Create a map of global variables after creating each *)
   let global_vars : L.llvalue StringMap.t =
   (* add struct definition *)
-    let global_var m (t, n) =
-      let init = L.const_int (ltype_of_typ t) 0 in
-      StringMap.add n (L.define_global n init the_module) m
+    let global_var m decls =
+    match decls with
+        A.Bind (t, n) -> 
+        let init = L.const_int (ltype_of_typ t) 0 in
+        StringMap.add n (L.define_global n init the_module) m
+      | _ -> m
     in
     List.fold_left global_var StringMap.empty globals 
   in
@@ -159,5 +162,5 @@ let rec ltype_of_typ = (function
   
   in
   
-  List.iter build_main_body stmts;
+  build_main_body stmts;
   the_module
