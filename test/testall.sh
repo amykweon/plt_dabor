@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Regression testing script for MicroC
+# Regression testing script for DUNE
 # Step through a list of files
 #  Compile, run, and check the output of each expected-to-work test
 #  Compile and check the error of each expected-to-fail test
@@ -15,8 +15,8 @@ LLC="llc"
 # Path to the C compiler
 CC="cc"
 
-# Path to the microc compiler. 
-MICROC="../bin/main.exe"
+# Path to the dune compiler. 
+DUNE="../bin/dabor.exe" #"../bin/main.exe"
 PRINTBIG="../lib/printbig.o"
 
 # Set time limit for all operations
@@ -49,6 +49,8 @@ SignalError() {
 Compare() {
     generatedfiles="$generatedfiles $3"
     echo diff -b $1 $2 ">" $3 1>&2
+    var=$(diff -b $1 $2)
+    echo "the diff: $var" >&2
     diff -b "$1" "$2" > "$3" 2>&1 || {
 	SignalError "$1 differs"
 	echo "FAILED $1 differs from $2" 1>&2
@@ -87,11 +89,13 @@ Check() {
 
     echo 1>&2
     echo "###### Testing $basename" 1>&2
-
+    echo "###### Testing $basename"
     generatedfiles=""
 
+    echo "$1"
+
     generatedfiles="$generatedfiles ${basename}.ll ${basename}.s ${basename}.exe ${basename}.out" &&
-    Run "$MICROC" "$1" ">" "${basename}.ll" &&
+    Run "$DUNE" "$1" ">" "${basename}.ll" &&
     Run "$LLC" "-relocation-model=pic" "${basename}.ll" ">" "${basename}.s" &&
     Run "$CC" "-o" "${basename}.exe" "${basename}.s" "$PRINTBIG" &&
     Run "./${basename}.exe" > "${basename}.out" &&
@@ -101,6 +105,7 @@ Check() {
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
+        echo "removing!"
 	    rm -f $generatedfiles
 	fi
 	echo "OK"
@@ -122,17 +127,18 @@ CheckFail() {
 
     echo 1>&2
     echo "###### Testing $basename" 1>&2
-
+    echo "###### Testing $basename"
     generatedfiles=""
 
     generatedfiles="$generatedfiles ${basename}.err ${basename}.diff" &&
-    RunFail "$MICROC" "<" $1 "2>" "${basename}.err" ">>" $globallog &&
+    RunFail "$DUNE" "<" $1 "2>" "${basename}.err" ">>" $globallog &&
     Compare ${basename}.err ${reffile}.err ${basename}.diff
 
     # Report the status and clean up the generated files
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
+        echo "removing!"
 	    rm -f $generatedfiles
 	fi
 	echo "OK"
@@ -161,6 +167,8 @@ LLIFail() {
   echo "Check your LLVM installation and/or modify the LLI variable in testall.sh"
   exit 1
 }
+var=$(pwd)
+echo "The current working directory $var."
 
 which "$LLI" >> $globallog || LLIFail
 
@@ -175,9 +183,12 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-*.mc tests/fail-*.mc"
+    files="tests/test-basic.mc tests/fail-*.mc"
 fi
 
+echo "files:"
+echo $files
+echo "test"
 for file in $files
 do
     case $file in
