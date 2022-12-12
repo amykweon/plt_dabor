@@ -1,0 +1,11 @@
+int x;
+x = 8;
+
+if (x > 3) {
+    x = 2;
+} else if (x > 9) {
+    x = 3;
+}
+
+print_int x;
+
