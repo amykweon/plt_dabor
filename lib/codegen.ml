@@ -22,7 +22,8 @@ let translate (globals, stmts) =
   let ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
-    | A.String-> string_t
+    | A.String -> string_t
+    | A.Duple -> duple_t
     | _ -> void_t
   in
 
@@ -34,6 +35,7 @@ let translate (globals, stmts) =
         A.Bind (t, n) -> 
           let init = match t with
             A.String -> L.const_pointer_null (ltype_of_typ t)
+          | A.Duple -> L.const_struct context ([| (L.i32_type context); (L.i32_type context) |])
           | _ -> L.const_int (ltype_of_typ t) 0
           StringMap.add n (L.define_global n init the_module) m
       | _ -> m
