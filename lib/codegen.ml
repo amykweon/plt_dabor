@@ -6,7 +6,7 @@ open Sast
 
 module StringMap = Map.Make(String)
 
-let translate (globals, stmts) = 
+let translate (struct_field_info, globals, stmts) = 
     let context = L.global_context () in
     let the_module = L.create_module context "dabor" in
     
@@ -17,15 +17,27 @@ let translate (globals, stmts) =
     and void_t = L.void_type context
     and duple_t    = L.struct_type context [| (L.i32_type context); (L.i32_type context) |]
     in
+
+    let structPtrTyps = Hashtbl.create 10 in
   
   (* given type, generate size *)
-  let ltype_of_typ = function
+  let rec ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
     | A.String-> string_t
+    | A.StructT(s_name) -> 
+      let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
+        ( match s_ptr_type with 
+        | Some (s_ptr_type) -> L.pointer_type s_ptr_type
+        | None -> let s_ptr_type = L.named_struct_type context s_name in
+                  Hashtbl.add structPtrTyps s_name s_ptr_type; (* Hashtable is mutable *)
+                  L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; (* not sure what 'ispacked' is*)
+                  L.pointer_type s_ptr_type
+        )
     | _ -> void_t
   in
 
+  
   (* Create a map of global variables after creating each *)
   let global_vars : L.llvalue StringMap.t =
   (* add struct definition *)
@@ -111,6 +123,7 @@ let rec ltype_of_typ = (function
           *)
           let id_n = match i with
               SId s -> (lookup s)
+            | SStructCreate (s, field_list) -> 
             | _ -> raise (Failure ("TODO: ot implemented yet"))
             in
           let e' = build_expr builder e in
