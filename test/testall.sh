@@ -105,7 +105,6 @@ Check() {
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
-        echo "removing!"
 	    rm -f $generatedfiles
 	fi
 	echo "OK"
@@ -138,7 +137,6 @@ CheckFail() {
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
-        echo "removing!"
 	    rm -f $generatedfiles
 	fi
 	echo "OK"
@@ -183,7 +181,7 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-basic.mc tests/fail-*.mc"
+    files="tests/test-basic.mc" # tests/fail-*.mc
 fi
 
 echo "files:"
