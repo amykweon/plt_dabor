@@ -15,7 +15,7 @@ let translate (globals, stmts) =
     and i1_t   = L.i1_type context
     and string_t = (L.pointer_type (L.i8_type context))
     and void_t = L.void_type context
-    and duple_t    = L.struct_type context [| (L.i32_type context); (L.i32_type context) |]
+    and duple_t = L.array_type i32_t 2
     in
   
   (* given type, generate size *)
@@ -35,8 +35,8 @@ let translate (globals, stmts) =
         A.Bind (t, n) -> 
           let init = match t with
             A.String -> L.const_pointer_null (ltype_of_typ t)
-          | A.Duple -> L.const_struct context ([| (L.i32_type context); (L.i32_type context) |])
           | _ -> L.const_int (ltype_of_typ t) 0
+        in
           StringMap.add n (L.define_global n init the_module) m
       | _ -> m
     in
@@ -48,6 +48,14 @@ let translate (globals, stmts) =
   in
   let printf_func : L.llvalue =
     L.declare_function "printf" printf_t the_module
+  in
+
+
+  let llstore lval laddr builder =
+    let ptr = L.build_pointercast laddr (L.pointer_type (L.type_of lval)) "" builder in
+    let store_inst = (L.build_store lval ptr builder) in
+    debug ((L.string_of_llvalue store_inst));
+    ()
   in
 
 (*
@@ -124,9 +132,18 @@ let rec ltype_of_typ = (function
         | SAssign (id_t, e) -> raise (Failure "TODO")
         | SMatrixCreate (int_list) -> raise (Failure "TODO")
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
-        | SDupleCreate (i1, i2) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
+        | SDupleCreate (i1, i2) ->
+          let int1 = build_expr i1 in
+          let int2 = build_expr i2 in
+          let duple_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+          ignore ( 
+            let indx = L.const_int i32_t 0 in
+            let eptr = L.build_gep ptr [|indx|] "" builder in llstore int1 eptr builder;
+            let indy = L.const_int i32_t 1 in
+            let eptr = L.build_gep ptr [|indy|] "" builder in llstore int1 eptr builder;
+          ); (duple_ptr)
         | SIdRule id_t -> build_idrule builder id_t
         | _ -> raise (Failure "TODO")
       in
