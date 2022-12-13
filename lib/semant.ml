@@ -176,4 +176,4 @@ let check (program: program) =
         SWhile(check_bool_expr e, check_stmt st)
 
     in (* body of check_func *)
-    (vdecls, check_stmt_list stmts)
+    (struct_field_info, vdecls, check_stmt_list stmts)
