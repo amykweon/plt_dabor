@@ -115,6 +115,6 @@ expr_rule:
  | LPAREN expr_rule RPAREN               { $2 }
  | ID LBRACE struct_list RBRACE             { StructCreate($1, $3) }
  | MATRIX_C LPAREN matrix_rule RPAREN    { MatrixCreate($3) }
- | LPAREN INT_LITERAL COMMA INT_LITERAL RPAREN    { DupleCreate($2, $4) }
+ | LPAREN expr_rule COMMA expr_rule RPAREN    { DupleCreate($2, $4) }
  | PRINTI expr_rule                    { PrintInt($2) }
 

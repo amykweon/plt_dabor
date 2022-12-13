@@ -84,7 +84,7 @@ let check (program: program) =
       | StringLit l -> (String, SStringLit l)
       | IdRule i -> let (typ, sx) = check_id_typ i in (typ, SIdRule(typ, sx))
       | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
-      | DupleCreate(i, j) -> (Duple, SDupleCreate(i, j))
+      | DupleCreate(e1, e2) -> let i = check_expr e1 in let j = check_expr e2 in (Duple, SDupleCreate(i, j))
       | MatrixCreate(els) -> 
         let good = List.for_all (fun l -> (List.length l) = (List.length (List.nth els 0))) els in
         if good then 

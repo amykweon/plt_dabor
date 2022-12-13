@@ -19,7 +19,7 @@ and sx =
   | SAssign of sid_typ * sexpr
   | SMatrixCreate of (int list) list
   | SStructCreate of string * ((string * sexpr) list)
-  | SDupleCreate of int * int
+  | SDupleCreate of sexpr * sexpr
   | SPrintInt of sexpr
 
 type sstmt =
@@ -58,7 +58,7 @@ let rec string_of_sexpr (t, e) =
     | SVectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_sexpr num
     | SMatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
     | SStructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_se l) ^ "}"
-    | SDupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
+    | SDupleCreate(x, y) -> "(" ^ string_of_sexpr x ^ ", " ^ string_of_sexpr y ^ ")"
     | SPrintInt(e) -> "print integer: " ^ string_of_sexpr e
   )
   and struct_of_struct_se (id, e) = id ^ " : " ^ string_of_sexpr e ^ ";\n"

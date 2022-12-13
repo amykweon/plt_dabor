@@ -23,7 +23,7 @@ type expr =
   | Assign of id_typ * expr
   | MatrixCreate of (int list) list
   | StructCreate of string * ((string * expr) list)
-  | DupleCreate of int * int
+  | DupleCreate of expr * expr
   | PrintInt of expr
 
 type stmt =
@@ -90,7 +90,7 @@ let rec string_of_expr = function
   | VectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_expr num
   | MatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
   | StructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
-  | DupleCreate(x, y) -> "(" ^ string_of_int x ^ ", " ^ string_of_int y ^ ")"
+  | DupleCreate(x, y) -> "(" ^ string_of_expr x ^ ", " ^ string_of_expr y ^ ")"
   | PrintInt(e) -> "print integer: " ^ string_of_expr e
 and struct_of_struct_e (id, e) = id ^ " : " ^ string_of_expr e ^ ";\n"
 
