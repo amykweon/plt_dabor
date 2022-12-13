@@ -15,6 +15,7 @@ let translate (globals, stmts) =
     and i1_t   = L.i1_type context
     and string_t = (L.pointer_type (L.i8_type context))
     and void_t = L.void_type context
+    and duple_t    = L.struct_type context [| (L.i32_type context); (L.i32_type context) |]
     in
   
   (* given type, generate size *)
@@ -31,8 +32,10 @@ let translate (globals, stmts) =
     let global_var m decls =
     match decls with
         A.Bind (t, n) -> 
-        let init = L.const_int (ltype_of_typ t) 0 in
-        StringMap.add n (L.define_global n init the_module) m
+          let init = match t with
+            A.String -> L.const_pointer_null (ltype_of_typ t)
+          | _ -> L.const_int (ltype_of_typ t) 0
+          StringMap.add n (L.define_global n init the_module) m
       | _ -> m
     in
     List.fold_left global_var StringMap.empty globals 
