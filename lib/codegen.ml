@@ -15,7 +15,7 @@ let translate (struct_field_info, globals, stmts) =
     and i1_t   = L.i1_type context
     and string_t = (L.pointer_type (L.i8_type context))
     and void_t = L.void_type context
-    and duple_t    = L.struct_type context [| (L.i32_type context); (L.i32_type context) |]
+    and duple_t = L.array_type i32_t 2
     in
 
     let structPtrTyps = Hashtbl.create 10 in
@@ -24,6 +24,7 @@ let translate (struct_field_info, globals, stmts) =
   let rec ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
+<<<<<<< HEAD
     | A.String-> string_t
     | A.StructT(s_name) -> 
       let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
@@ -34,6 +35,10 @@ let translate (struct_field_info, globals, stmts) =
                   L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; (* not sure what 'ispacked' is*)
                   L.pointer_type s_ptr_type
         )
+=======
+    | A.String -> string_t
+    | A.Duple -> duple_t
+>>>>>>> 5852e36de2685a67802bdf8cfb0bbe7c61b053b2
     | _ -> void_t
   in
 
@@ -47,6 +52,7 @@ let translate (struct_field_info, globals, stmts) =
           let init = match t with
             A.String -> L.const_pointer_null (ltype_of_typ t)
           | _ -> L.const_int (ltype_of_typ t) 0
+        in
           StringMap.add n (L.define_global n init the_module) m
       | _ -> m
     in
@@ -58,6 +64,14 @@ let translate (struct_field_info, globals, stmts) =
   in
   let printf_func : L.llvalue =
     L.declare_function "printf" printf_t the_module
+  in
+
+
+  let llstore lval laddr builder =
+    let ptr = L.build_pointercast laddr (L.pointer_type (L.type_of lval)) "" builder in
+    let store_inst = (L.build_store lval ptr builder) in
+    debug ((L.string_of_llvalue store_inst));
+    ()
   in
 
 (*
@@ -135,9 +149,18 @@ let rec ltype_of_typ = (function
         | SAssign (id_t, e) -> raise (Failure "TODO")
         | SMatrixCreate (int_list) -> raise (Failure "TODO")
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
-        | SDupleCreate (i1, i2) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
+        | SDupleCreate (i1, i2) ->
+          let int1 = build_expr i1 in
+          let int2 = build_expr i2 in
+          let duple_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+          ignore ( 
+            let indx = L.const_int i32_t 0 in
+            let eptr = L.build_gep ptr [|indx|] "" builder in llstore int1 eptr builder;
+            let indy = L.const_int i32_t 1 in
+            let eptr = L.build_gep ptr [|indy|] "" builder in llstore int1 eptr builder;
+          ); (duple_ptr)
         | SIdRule id_t -> build_idrule builder id_t
         | _ -> raise (Failure "TODO")
       in
