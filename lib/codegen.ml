@@ -24,8 +24,8 @@ let translate (struct_field_info, globals, stmts) =
   let rec ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
-<<<<<<< HEAD
-    | A.String-> string_t
+    | A.String -> string_t
+    | A.Duple -> duple_t
     | A.StructT(s_name) -> 
       let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
         ( match s_ptr_type with 
@@ -35,10 +35,6 @@ let translate (struct_field_info, globals, stmts) =
                   L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; (* not sure what 'ispacked' is*)
                   L.pointer_type s_ptr_type
         )
-=======
-    | A.String -> string_t
-    | A.Duple -> duple_t
->>>>>>> 5852e36de2685a67802bdf8cfb0bbe7c61b053b2
     | _ -> void_t
   in
 
@@ -103,6 +99,7 @@ let rec ltype_of_typ = (function
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
+        | SStructCreate (s, field_list) -> ()
         | SBinop(e1, op, e2) ->
             let e1' = build_expr builder e1
             and e2' = build_expr builder e2 in
