@@ -84,8 +84,8 @@ matrix_rule:
 id_rule:
   ID                                    { Id $1 }
 | ID DOT ID                             { StructAccess($1, $3) }
-| ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { MatrixAccess($1, $3, $5) }
-| ID LBRACK id_rule RBRACK              { MatrixAccessVar($1, $3) }
+| ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { IndexAccess($1, $3, $5) }
+| ID LBRACK expr_rule RBRACK              { IndexAccessVar($1, $3) }
 
 expr_rule:
    BLIT                                  { BoolLit $1 }

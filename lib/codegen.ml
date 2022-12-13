@@ -51,12 +51,12 @@ let translate (globals, stmts) =
   in
 
 
-  (* let llstore lval laddr builder =
+  let llstore lval laddr builder =
     let ptr = L.build_pointercast laddr (L.pointer_type (L.type_of lval)) "" builder in
     let store_inst = (L.build_store lval ptr builder) in
     ignore ((L.string_of_llvalue store_inst));
     ()
-  in *)
+  in
 
 (*
 let rec ltype_of_typ = (function
@@ -121,7 +121,11 @@ let rec ltype_of_typ = (function
           *)
           let id_n = match i with
               SId s -> (lookup s)
-            | _ -> raise (Failure ("TODO: ot implemented yet"))
+            | SIndexAccessVar (v, index) -> 
+              let i' = build_expr builder index in
+              let indices = [|L.const_int i32_t 0; i'|] in
+              (L.build_gep (lookup v) indices "" builder)
+            | _ -> raise (Failure ("TODO: not implemented yet"))
             in
           let e' = build_expr builder e in
           ignore(L.build_store e' id_n builder); e'
@@ -134,16 +138,16 @@ let rec ltype_of_typ = (function
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
-        | SDupleCreate (_, _) ->
-          (* let int1 = build_expr builder i1 in
-          let int2 = build_expr builder i2 in *)
+        | SDupleCreate (i1, i2) ->
+          let int1 = build_expr builder i1 in
+          let int2 = build_expr builder i2 in
           let duple_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
-          (* ignore ( 
+          ignore ( 
             let indx = L.const_int i32_t 0 in
             let eptr = L.build_gep duple_ptr [|indx|] "" builder in llstore int1 eptr builder;
             let indy = L.const_int i32_t 1 in
             let eptr = L.build_gep duple_ptr [|indy|] "" builder in llstore int2 eptr builder;
-          );*) (duple_ptr)
+          ); (duple_ptr)
         | SIdRule id_t -> build_idrule builder id_t
         | _ -> raise (Failure "TODO")
       in

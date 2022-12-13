@@ -60,25 +60,23 @@ let check (program: program) =
           )
           | _ -> raise (Failure ("trying to use a non struct variable as a struct"))
       )
-      | MatrixAccess(var, i, j) -> 
+      | IndexAccess(var, i, j) -> 
         let lt = type_of_identifier var in
-        let err = "trying to use non-matrix variable as matrix" in
+        let err = "trying to use a non matrix variable for index" in
         if (lt != Matrix)
           then raise (Failure err)
         else
-
-        (Int, SMatrixAccess(var, i, j))
-      | MatrixAccessVar(m_name, id_name) -> (
-        let (id_ty, id_name') = check_id_typ id_name in
-        let mt = type_of_identifier m_name in
-          if (mt = Matrix && id_ty = Duple) then
-            (Int, SMatrixAccessVar(m_name, (id_ty, id_name')))
+        (Int, SIndexAccess(var, i, j))
+      | IndexAccessVar(v_name, index) -> (
+        let (id_ty, index') = check_expr index in
+        let vt = type_of_identifier v_name in
+          if (vt = Matrix && id_ty = Duple || vt = Duple && id_ty = Int) then
+            (Int, SIndexAccessVar(v_name, (id_ty, index')))
           else
-            raise (Failure ("tried to use matrix duple indexing with invalid types"))
+            raise (Failure ("tried to use variable indexing with invalid types"))
       )
-    in
 
-  let rec check_expr = function
+  and check_expr = function
         IntLit l -> (Int, SIntLit l)
       | BoolLit l -> (Bool, SBoolLit l)
       | StringLit l -> (String, SStringLit l)
