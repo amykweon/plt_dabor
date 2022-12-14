@@ -35,6 +35,7 @@ let translate (globals, stmts) =
         A.Bind (t, n) -> 
           let init = match t with
             A.String -> L.const_pointer_null (ltype_of_typ t)
+          | A.Duple -> L.const_pointer_null (L.pointer_type i32_t)
           | _ -> L.const_int (ltype_of_typ t) 0
         in
           StringMap.add n (L.define_global n init the_module) m
