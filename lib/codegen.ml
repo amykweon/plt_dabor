@@ -29,7 +29,7 @@ let translate (globals, stmts) =
   
   (* Create a map of global variables after creating each *)
   let global_vars : L.llvalue StringMap.t =
-  (* add struct definition *)
+  (* add struct definition DONE *)
     let global_var m decls =
     match decls with
         A.Bind (t, n) -> 
