@@ -1,0 +1,32 @@
+bool x;
+bool y;
+bool z;
+
+x = true;
+y = true;
+z = false;
+
+if (x && y) {
+	print_int 1;
+}
+
+if (!(x && z)) {
+	print_int 1;
+}
+
+if (x || z) {
+	print_int 1;
+}
+
+if (x || y) {
+	print_int 1;
+}
+
+y = !y;
+if (!(y || z)) {
+	print_int 1;
+}
+
+if (!(y && z)) {
+	print_int 1;
+}
