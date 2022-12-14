@@ -9,10 +9,10 @@ type typ = Int | Bool | String | Vector | Matrix | StructT of string | Duple
 type id_typ = 
     Id of string
   | StructAccess of string * string
-  | IndexAccess of string * int * int
-  | IndexAccessVar of string * expr
+  | MatrixAccess of string * int * int
+  | MatrixAccessVar of string * id_typ
 
-and expr =
+type expr =
     IntLit of int
   | BoolLit of bool
   | StringLit of string
@@ -73,10 +73,11 @@ let string_of_matrix_l (l) = "[ " ^ String.concat "" (List.map string_of_matrix 
 let rec string_id_typ = function
     Id(s) -> s
   | StructAccess(id1, id2) -> id1 ^ "." ^ id2
-  | IndexAccess(id, x, y) ->
+  | MatrixAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
-  | IndexAccessVar (id, v) -> id ^ " [" ^ string_of_expr v ^ "]"
-and string_of_expr = function
+  | MatrixAccessVar(id, v) -> id ^ " [" ^ string_id_typ v ^ "]"
+
+let rec string_of_expr = function
     IntLit(l) -> string_of_int l
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
