@@ -6,7 +6,7 @@ open Sast
 
 module StringMap = Map.Make(String)
 
-let translate (globals, stmts) = 
+let translate (struct_field_info, globals, stmts) = 
     let context = L.global_context () in
     let the_module = L.create_module context "dabor" in
     
@@ -17,15 +17,26 @@ let translate (globals, stmts) =
     and void_t = L.void_type context
     in
 
+    let structPtrTyps = Hashtbl.create 10 in
   
   (* given type, generate size *)
-  let ltype_of_typ = function
+  let rec ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
     | A.String -> string_t
     | A.Duple -> L.array_type i32_t 2
+    | A.StructT(s_name) -> 
+      let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
+        ( match s_ptr_type with 
+        | Some (s_ptr_type) -> L.pointer_type s_ptr_type
+        | None -> let s_ptr_type = L.named_struct_type context s_name in
+                  Hashtbl.add structPtrTyps s_name s_ptr_type; (* Hashtable is mutable *)
+                  L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; (* not sure what 'ispacked' is*)
+                  L.pointer_type s_ptr_type
+        )
     | _ -> void_t
   in
+
   
   (* Create a map of global variables after creating each *)
   let global_vars : L.llvalue StringMap.t =
@@ -51,12 +62,10 @@ let translate (globals, stmts) =
   in
 
 
-  (* let llstore lval laddr builder =
+  let llstore lval laddr builder =
     let ptr = L.build_pointercast laddr (L.pointer_type (L.type_of lval)) "" builder in
-    let store_inst = (L.build_store lval ptr builder) in
-    ignore ((L.string_of_llvalue store_inst));
-    ()
-  in *)
+    L.build_store lval ptr builder
+  in
 
 (*
 let rec ltype_of_typ = (function
@@ -87,6 +96,7 @@ let rec ltype_of_typ = (function
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
+        | SStructCreate (s, field_list) -> ()
         | SBinop(e1, op, e2) ->
             let e1' = build_expr builder e1
             and e2' = build_expr builder e2 in
@@ -121,6 +131,7 @@ let rec ltype_of_typ = (function
           *)
           let id_n = match i with
               SId s -> (lookup s)
+            | SStructCreate (s, field_list) -> 
             | _ -> raise (Failure ("TODO: ot implemented yet"))
             in
           let e' = build_expr builder e in
@@ -134,16 +145,16 @@ let rec ltype_of_typ = (function
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
-        | SDupleCreate (_, _) ->
-          (* let int1 = build_expr builder i1 in
-          let int2 = build_expr builder i2 in *)
+        | SDupleCreate (i1, i2) ->
+          let int1 = build_expr builder i1 in
+          let int2 = build_expr builder i2 in
           let duple_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
-          (* ignore ( 
+          ignore ( 
             let indx = L.const_int i32_t 0 in
             let eptr = L.build_gep duple_ptr [|indx|] "" builder in llstore int1 eptr builder;
             let indy = L.const_int i32_t 1 in
             let eptr = L.build_gep duple_ptr [|indy|] "" builder in llstore int2 eptr builder;
-          );*) (duple_ptr)
+          ); (duple_ptr)
         | SIdRule id_t -> build_idrule builder id_t
         | _ -> raise (Failure "TODO")
       in
