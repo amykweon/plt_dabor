@@ -79,12 +79,14 @@ let rec ltype_of_typ = (function
     let lookup n = StringMap.find n global_vars in
     
     (* IdRule implementation *)
-    let build_idrule builder ((_, i): sid_typ) = match i with
+    let rec build_idrule builder ((_, i): sid_typ) = match i with
         SId s     -> L.build_load (lookup s) s builder
+      | SDupleAccess (v, index) ->
+        let i' = L.const_int i32_t index in
+        (L.build_gep (lookup v) [|i'|] "" builder)
       | _ -> raise (Failure "TODO")
-    in
 
-    let rec build_expr builder ((_, e) : sexpr) = match e with
+    and build_expr builder ((_, e) : sexpr) = match e with
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
@@ -116,20 +118,19 @@ let rec ltype_of_typ = (function
             )e' "tmp" builder
         | SPrintInt (e) -> L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
 	          "printf" builder
-        | SAssign (((_, i)), e) -> 
-          (*
-          let id_n = build_idrule builder id_t in
-          *)
+        | SAssign ((_, i), e) -> 
+          (* let id_n = build_idrule builder id_t in *)
           let id_n = match i with
-              SId s -> (lookup s)
-            | SIndexAccessVar (v, index) -> 
+              SId s -> (lookup s) in
+                let e' = build_expr builder e in
+                ignore(L.build_store e' id_n builder); e'
+            | IndexAccess (_, _, _) -> raise (Failure("TODO:"))
+            (* | SDupleAccess (v, index) -> 
               let i' = build_expr builder index in
-              let indices = [|L.const_int i32_t 0; i'|] in
-              (L.build_gep (lookup v) indices "" builder)
+              let e' = build_expr builder e in
+              let ptr = (L.build_gep (lookup v) [|i'|] "" builder) in
+              llstore e' ptr builder *)
             | _ -> raise (Failure ("TODO: not implemented yet"))
-            in
-          let e' = build_expr builder e in
-          ignore(L.build_store e' id_n builder); e'
         (*
         | SCall ("print", [e]) | SCall ("printb", [e]) ->
 	          L.build_call printf_func [| int_format_str ; (build_expr builder e) |]

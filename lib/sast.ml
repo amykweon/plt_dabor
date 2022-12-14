@@ -5,9 +5,10 @@ and si =
     SId of string
   | SStructAccess of string * string
   | SIndexAccess of string * int * int
-  | SIndexAccessVar of string * sexpr
+  | SDupleAccess of string * int
+  | SIndexAccessVar of string * sid_typ
 
-and sexpr = typ * sx
+type sexpr = typ * sx
 and sx =
     SIntLit of int
   | SBoolLit of bool
@@ -39,11 +40,13 @@ let rec string_sid_typ (t, i)=
 "(" ^ string_of_typ t ^ " : " ^ (match i with
     SId(s) -> s
   | SStructAccess(id1, id2) -> id1 ^ "." ^ id2
+  | SDupleAccess (id, x) -> id ^ "[" ^ string_of_int x ^ "]"
   | SIndexAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
-  | SIndexAccessVar(id, e) -> id ^ " [" ^ string_of_sexpr e ^ "]"
+  | SIndexAccessVar(id, e) -> id ^ " [" ^ string_sid_typ e ^ "]"
  ) ^ ")"
-and string_of_sexpr (t, e) = 
+
+ let rec string_of_sexpr (t, e) = 
   "(" ^ string_of_typ t ^ " : " ^ (match e with
       SIntLit(l) -> string_of_int l
     | SBoolLit(true) -> "true"
