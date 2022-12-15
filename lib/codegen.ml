@@ -6,7 +6,7 @@ open Sast
 
 module StringMap = Map.Make(String)
 
-let translate (struct_field_info, globals, stmts) =
+let translate (globals, stmts) = 
     let context = L.global_context () in
     let the_module = L.create_module context "dabor" in
     
@@ -17,23 +17,13 @@ let translate (struct_field_info, globals, stmts) =
     and void_t = L.void_type context
     in
 
-  let structPtrTyps = Hashtbl.create 10 in
   
   (* given type, generate size *)
-  let rec ltype_of_typ = function
+  let ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
     | A.String -> string_t
     | A.Duple -> L.array_type i32_t 2
-    | A.StructT(s_name) -> 
-      let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
-        ( match s_ptr_type with 
-        | Some (s_ptr_type) -> L.pointer_type s_ptr_type
-        | None -> let s_ptr_type = L.named_struct_type context s_name in
-                  Hashtbl.add structPtrTyps s_name s_ptr_type; (* Hashtable is mutable *)
-                  L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; (* not sure what 'ispacked' is*)
-                  L.pointer_type s_ptr_type
-        )
     | _ -> void_t
   in
   
@@ -89,12 +79,14 @@ let rec ltype_of_typ = (function
     let lookup n = StringMap.find n global_vars in
     
     (* IdRule implementation *)
-    let build_idrule builder ((_, i): sid_typ) = match i with
+    let rec build_idrule builder ((_, i): sid_typ) = match i with
         SId s     -> L.build_load (lookup s) s builder
+      | SDupleAccess (v, index) ->
+        let i' = L.const_int i32_t index in
+        (L.build_gep (lookup v) [|i'|] "" builder)
       | _ -> raise (Failure "TODO")
-    in
 
-    let rec build_expr builder ((_, e) : sexpr) = match e with
+    and build_expr builder ((_, e) : sexpr) = match e with
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
@@ -126,21 +118,20 @@ let rec ltype_of_typ = (function
             )e' "tmp" builder
         | SPrintInt (e) -> L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
 	          "printf" builder
-        | SAssign (((_, i)), e) -> 
-          (*
-          let id_n = build_idrule builder id_t in
-          *)
-          let id_n = match i with
-              SId s -> (lookup s)
-            | SIndexAccessVar (v, index) -> 
-              let i' = build_expr builder index in
-              let indices = [|L.const_int i32_t 0; i'|] in
-              (L.build_gep (lookup v) indices "" builder)
+        | SAssign ((_, i), e) ->
+          (* let id_n = build_idrule builder id_t in *)
+          let add = match i with
+              SId s -> let id_add = (lookup s) in
+                let e' = build_expr builder e in
+                ignore(L.build_store e' id_add builder); e'
+            | SDupleAccess (v, index) -> 
+              let i' = L.const_int i32_t index in
+              let e' = build_expr builder e in
+              let ptr = (L.build_gep (lookup v) [|i'|] "" builder) in
+              ignore(llstore e' ptr builder); e'
             | _ -> raise (Failure ("TODO: not implemented yet"))
-            in
-          let e' = build_expr builder e in
-          ignore(L.build_store e' id_n builder); e'
-        (* TODO:
+          in add
+        (*
         | SCall ("print", [e]) | SCall ("printb", [e]) ->
 	          L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
 	          "printf" builder
