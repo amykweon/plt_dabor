@@ -77,7 +77,7 @@ let rec string_id_typ = function
   | DupleAccess (id, x) -> id ^ "[" ^ string_of_int x ^ "]"
   | IndexAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
-  | IndexAccessVar (id, v) -> id ^ " [" ^ string_of_expr v ^ "]"
+  | IndexAccessVar (id, v) -> id ^ " [" ^ string_id_typ v ^ "]"
 
 let rec string_of_expr = function
     IntLit(l) -> string_of_int l

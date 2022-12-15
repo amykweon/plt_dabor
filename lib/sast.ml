@@ -43,7 +43,7 @@ let rec string_sid_typ (t, i)=
   | SStructAccess(id1, id2) -> id1 ^ "." ^ id2
   | SIndexAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
-  | SIndexAccessVar(id, e) -> id ^ " [" ^ string_of_sexpr e ^ "]"
+  | SIndexAccessVar(id, e) -> id ^ " [" ^ string_sid_typ e ^ "]"
  ) ^ ")"
 
 let rec string_of_sexpr (t, e) = 

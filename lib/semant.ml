@@ -60,6 +60,12 @@ let check (program: program) =
           )
           | _ -> raise (Failure ("trying to use a non struct variable as a struct"))
       )
+      | DupleAccess (var, i) -> 
+        let vt = type_of_identifier var in
+          if (vt = Duple) then
+            (Int, SDupleAccess(var, i))
+          else
+            raise (Failure ("tried to use variable indexing with invalid types"))
       | IndexAccess(var, i, j) -> 
         let lt = type_of_identifier var in
         let err = "trying to use a non matrix variable for index" in
@@ -68,15 +74,16 @@ let check (program: program) =
         else
         (Int, SIndexAccess(var, i, j))
       | IndexAccessVar(v_name, index) -> (
-        let (id_ty, index') = check_expr index in
+        let (id_ty, index') = check_id_typ index in
         let vt = type_of_identifier v_name in
-          if (vt = Matrix && id_ty = Duple || vt = Duple && id_ty = Int) then
+          if (vt = Matrix && id_ty = Duple) then
             (Int, SIndexAccessVar(v_name, (id_ty, index')))
           else
             raise (Failure ("tried to use variable indexing with invalid types"))
       )
-
-  and check_expr = function
+  in
+  
+  let rec check_expr = function
         IntLit l -> (Int, SIntLit l)
       | BoolLit l -> (Bool, SBoolLit l)
       | StringLit l -> (String, SStringLit l)
@@ -174,4 +181,4 @@ let check (program: program) =
         SWhile(check_bool_expr e, check_stmt st)
 
     in (* body of check_func *)
-    (struct_field_info, vdecls, check_stmt_list stmts)
+    (vdecls, check_stmt_list stmts)
