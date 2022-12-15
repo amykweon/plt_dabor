@@ -90,7 +90,7 @@ let rec ltype_of_typ = (function
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
-        | SBinop(e1, op, e2) ->
+        | SBinop((A.Int,_ ) as e1, op, e2) ->
             let e1' = build_expr builder e1
             and e2' = build_expr builder e2 in
             (match op with
@@ -98,20 +98,33 @@ let rec ltype_of_typ = (function
 	            | A.Sub     -> L.build_sub
 	            | A.Multi    -> L.build_mul
               | A.Divide     -> L.build_sdiv
-	            | A.And     -> L.build_and
-	            | A.Or      -> L.build_or
 	            | A.Equal   -> L.build_icmp L.Icmp.Eq
 	            | A.Neq     -> L.build_icmp L.Icmp.Ne
 	            | A.Less    -> L.build_icmp L.Icmp.Slt
 	            | A.EqLess     -> L.build_icmp L.Icmp.Sle
 	            | A.Greater -> L.build_icmp L.Icmp.Sgt
 	            | A.EqGreater     -> L.build_icmp L.Icmp.Sge
-              | A.Not     -> raise (Failure "NOT is a unary operator")
+              | A.And     -> raise (Failure "AND is a boolean operator")
+	            | A.Or      -> raise (Failure "OR is a boolean operator")
+              | A.Not     -> raise (Failure "NOT is a unary boolean operator")
               | A.Mod     -> raise (Failure "Not implemented")
               | A.Move    -> raise (Failure "Not implemented")
             ) e1' e2' "tmp" builder
-        | SUnop(op, e) ->
-            let e' = build_expr builder e in
+        | SBinop((A.Bool,_ ) as e1, op, e2) ->
+              let e1' = build_expr builder e1
+              and e2' = build_expr builder e2 in
+              (match op with
+                  A.And     -> L.build_and
+                | A.Or      -> L.build_or
+                | A.Equal   -> L.build_icmp L.Icmp.Eq
+                | A.Neq     -> L.build_icmp L.Icmp.Ne
+                | A.Not     -> raise (Failure "NOT is a unary operator")
+                | A.Mod     -> raise (Failure "Not implemented")
+                | A.Move    -> raise (Failure "Not implemented")
+                | _         -> raise (Failure "The operator is for integer arithmetic")
+              ) e1' e2' "tmp" builder
+        | SUnop(op, (A.Bool, e)) ->
+            let e' = build_expr builder (A.Bool, e) in
             (match op with
                 A.Not -> L.build_not
               | _ -> raise (Failure "No other unary operation supported than NOT")
