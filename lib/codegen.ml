@@ -83,14 +83,18 @@ let rec ltype_of_typ = (function
         SId s     -> L.build_load (lookup s) s builder
       | SDupleAccess (v, index) ->
         let i' = L.const_int i32_t index in
-        L.build_load (L.build_gep (lookup v) [|i'|] "" builder) "" builder
+        let ptr_load = 
+          let ptr = lookup v in
+          L.build_load ptr v builder in
+        let ptr_gep = L.build_in_bounds_gep ptr_load [|i'|] v builder in
+          L.build_load ptr_gep v builder
       | _ -> raise (Failure "TODO")
 
     and build_expr builder ((_, e) : sexpr) = match e with
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
-        | SBinop((A.Int,_ ) as e1, op, e2) ->
+        | SBinop(e1, op, e2) ->
             let e1' = build_expr builder e1
             and e2' = build_expr builder e2 in
             (match op with
@@ -98,30 +102,19 @@ let rec ltype_of_typ = (function
 	            | A.Sub     -> L.build_sub
 	            | A.Multi    -> L.build_mul
               | A.Mod     -> L.build_sdiv
+	            | A.And     -> L.build_and
+	            | A.Or      -> L.build_or
 	            | A.Equal   -> L.build_icmp L.Icmp.Eq
 	            | A.Neq     -> L.build_icmp L.Icmp.Ne
 	            | A.Less    -> L.build_icmp L.Icmp.Slt
 	            | A.EqLess     -> L.build_icmp L.Icmp.Sle
 	            | A.Greater -> L.build_icmp L.Icmp.Sgt
 	            | A.EqGreater     -> L.build_icmp L.Icmp.Sge
-              | A.And     -> raise (Failure "AND is a boolean operator")
-	            | A.Or      -> raise (Failure "OR is a boolean operator")
-              | A.Not     -> raise (Failure "NOT is a unary boolean operator")
+              | A.Not     -> raise (Failure "NOT is a unary operator")
               | A.Move    -> raise (Failure "Not implemented")
             ) e1' e2' "tmp" builder
-        | SBinop((A.Bool,_ ) as e1, op, e2) ->
-              let e1' = build_expr builder e1
-              and e2' = build_expr builder e2 in
-              (match op with
-                  A.And     -> L.build_and
-                | A.Or      -> L.build_or
-                | A.Equal   -> L.build_icmp L.Icmp.Eq
-                | A.Neq     -> L.build_icmp L.Icmp.Ne
-                | A.Not     -> raise (Failure "NOT is a unary operator")
-                | _         -> raise (Failure "The operator is for integer arithmetic")
-              ) e1' e2' "tmp" builder
-        | SUnop(op, (A.Bool, e)) ->
-            let e' = build_expr builder (A.Bool, e) in
+        | SUnop(op, e) ->
+            let e' = build_expr builder e in
             (match op with
                 A.Not -> L.build_not
               | _ -> raise (Failure "No other unary operation supported than NOT")
@@ -137,8 +130,10 @@ let rec ltype_of_typ = (function
             | SDupleAccess (v, index) -> 
               let i' = L.const_int i32_t index in
               let e' = build_expr builder e in
-              let ptr = (L.build_gep (lookup v) [|i'|] "" builder) in
-              ignore(llstore e' ptr builder); ptr
+              let ptr = lookup v in
+              let ptr_load = L.build_load ptr v builder in
+              let ptr_gep = L.build_in_bounds_gep ptr_load [|i'|] v builder in
+                ignore(L.build_store e' ptr_gep builder); e'
             | _ -> raise (Failure ("TODO: not implemented yet"))
           in add
         (*
