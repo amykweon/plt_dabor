@@ -97,7 +97,7 @@ let rec ltype_of_typ = (function
             	  A.Add     -> L.build_add
 	            | A.Sub     -> L.build_sub
 	            | A.Multi    -> L.build_mul
-              | A.Divide     -> L.build_sdiv
+              | A.Mod     -> L.build_sdiv
 	            | A.Equal   -> L.build_icmp L.Icmp.Eq
 	            | A.Neq     -> L.build_icmp L.Icmp.Ne
 	            | A.Less    -> L.build_icmp L.Icmp.Slt
@@ -107,7 +107,6 @@ let rec ltype_of_typ = (function
               | A.And     -> raise (Failure "AND is a boolean operator")
 	            | A.Or      -> raise (Failure "OR is a boolean operator")
               | A.Not     -> raise (Failure "NOT is a unary boolean operator")
-              | A.Mod     -> raise (Failure "Not implemented")
               | A.Move    -> raise (Failure "Not implemented")
             ) e1' e2' "tmp" builder
         | SBinop((A.Bool,_ ) as e1, op, e2) ->
@@ -119,8 +118,6 @@ let rec ltype_of_typ = (function
                 | A.Equal   -> L.build_icmp L.Icmp.Eq
                 | A.Neq     -> L.build_icmp L.Icmp.Ne
                 | A.Not     -> raise (Failure "NOT is a unary operator")
-                | A.Mod     -> raise (Failure "Not implemented")
-                | A.Move    -> raise (Failure "Not implemented")
                 | _         -> raise (Failure "The operator is for integer arithmetic")
               ) e1' e2' "tmp" builder
         | SUnop(op, (A.Bool, e)) ->

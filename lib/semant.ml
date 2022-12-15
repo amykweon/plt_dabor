@@ -131,7 +131,7 @@ let check (program: program) =
         if t1 = t2 then
           (* Determine expression type based on operator and operand types *)
           let t = match op with
-              Add | Sub | Multi | Divide | Mod when (t1 = Int) -> Int
+              Add | Sub | Multi | Mod when (t1 = Int) -> Int
             | Add | Sub when (t1 = Vector) -> Vector
             | Equal | Neq -> Bool
             | Less | EqLess | Greater | EqGreater when t1 = Int -> Bool
@@ -146,7 +146,7 @@ let check (program: program) =
             | _ -> raise (Failure err)
           else if ((t1 = Vector && t2 = Int) || (t2 = Vector && t1 = Int)) then
             match op with
-              Multi | Divide -> (Vector, SBinop((t1, e1'), op, (t2, e2')))
+              Multi | Mod -> (Vector, SBinop((t1, e1'), op, (t2, e2')))
             | _ -> raise (Failure err)
           else  
             raise (Failure err)

@@ -60,7 +60,6 @@ rule token = parse
 | '+' { PLUS }
 | '-' { MINUS }
 | '*' { MULTIPLY }
-| '/' { DIVIDE }
 | '=' { ASSIGN }
 | "==" { EQ }
 | "!=" { NEQ }
