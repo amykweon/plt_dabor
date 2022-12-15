@@ -7,7 +7,7 @@ y = 2;
 
 z = false;
 
-if (!z) {
+if (not z) {
 	print_int 1;
 }
 

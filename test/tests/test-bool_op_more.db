@@ -6,27 +6,27 @@ x = true;
 y = true;
 z = false;
 
-if (x && y) {
+if (x and y) {
 	print_int 1;
 }
 
-if (!(x && z)) {
+if (not (x and z)) {
 	print_int 1;
 }
 
-if (x || z) {
+if (x or z) {
 	print_int 1;
 }
 
-if (x || y) {
+if (x or y) {
 	print_int 1;
 }
 
-y = !y;
-if (!(y || z)) {
+y = not y;
+if (not (y or z)) {
 	print_int 1;
 }
 
-if (!(y && z)) {
+if (not (y and z)) {
 	print_int 1;
 }
