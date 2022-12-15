@@ -83,7 +83,7 @@ let rec ltype_of_typ = (function
         SId s     -> L.build_load (lookup s) s builder
       | SDupleAccess (v, index) ->
         let i' = L.const_int i32_t index in
-        (L.build_gep (lookup v) [|i'|] "" builder)
+        L.build_load (L.build_gep (lookup v) [|i'|] "" builder) "" builder
       | _ -> raise (Failure "TODO")
 
     and build_expr builder ((_, e) : sexpr) = match e with
@@ -138,7 +138,7 @@ let rec ltype_of_typ = (function
               let i' = L.const_int i32_t index in
               let e' = build_expr builder e in
               let ptr = (L.build_gep (lookup v) [|i'|] "" builder) in
-              ignore(llstore e' ptr builder); e'
+              ignore(llstore e' ptr builder); ptr
             | _ -> raise (Failure ("TODO: not implemented yet"))
           in add
         (*
