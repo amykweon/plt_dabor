@@ -1,6 +1,6 @@
 %{ open Ast %}
 %token DOT SEMI COLON COMMA LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK
-%token PLUS MINUS MULTIPLY DIVIDE MOD ASSIGN PRINTI
+%token PLUS MINUS MULTIPLY MOD ASSIGN PRINTI
 %token EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE WHILE CONTINUE BREAK BOOL INT STRING DUPLE STRUCT
 %token VECTOR DIAGLEFT DIAGRIGHT HORIZONTAL VERTICAL MATRIX MATRIX_C MOVE TUPLE
@@ -16,7 +16,7 @@
 %left OR
 %left AND
 %left EQ NEQ LT LEQ GT GEQ
-%left MULTIPLY DIVIDE MOD
+%left MULTIPLY MOD
 %left PLUS MINUS
 %left MOVE
 
@@ -97,7 +97,6 @@ expr_rule:
  | expr_rule PLUS expr_rule              { Binop ($1, Add, $3) }
  | expr_rule MINUS expr_rule             { Binop ($1, Sub, $3) }
  | expr_rule MULTIPLY expr_rule          { Binop ($1, Multi, $3) }
- | expr_rule DIVIDE expr_rule            { Binop ($1, Divide, $3) }
  | expr_rule EQ expr_rule                { Binop ($1, Equal, $3) }
  | expr_rule NEQ expr_rule               { Binop ($1, Neq, $3) }
  | expr_rule LT expr_rule                { Binop ($1, Less, $3) }

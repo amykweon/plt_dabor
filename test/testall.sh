@@ -98,15 +98,15 @@ Check() {
     Run "$DUNE" "$1" ">" "${basename}.ll" &&
     Run "$LLC" "-relocation-model=pic" "${basename}.ll" ">" "${basename}.s" &&
     Run "$CC" "-o" "${basename}.exe" "${basename}.s" "$PRINTBIG" &&
-    Run "./${basename}.exe" > "output.txt" &&
+    Run "./${basename}.exe" > "${basename}.out" &&
     Compare ${basename}.out ${reffile}.out ${basename}.diff
 
     # Report the status and clean up the generated files
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
-        rm -f "${basename}.ll ${basename}.s ${basename}.exe"
-	    # rm -f $generatedfiles
+        # rm -f "${basename}.ll ${basename}.s ${basename}.exe"
+	    rm -f $generatedfiles
 	fi
 	echo "OK"
 	echo "###### SUCCESS" 1>&2
@@ -182,7 +182,7 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-duple_index.db" # tests/fail-*.db
+    files="tests/test-*.db" # tests/fail-*.db
 fi
 
 echo "files:"

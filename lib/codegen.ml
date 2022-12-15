@@ -97,7 +97,7 @@ let rec ltype_of_typ = (function
             	  A.Add     -> L.build_add
 	            | A.Sub     -> L.build_sub
 	            | A.Multi    -> L.build_mul
-              | A.Divide     -> L.build_sdiv
+              | A.Mod     -> L.build_sdiv
 	            | A.And     -> L.build_and
 	            | A.Or      -> L.build_or
 	            | A.Equal   -> L.build_icmp L.Icmp.Eq
@@ -107,7 +107,6 @@ let rec ltype_of_typ = (function
 	            | A.Greater -> L.build_icmp L.Icmp.Sgt
 	            | A.EqGreater     -> L.build_icmp L.Icmp.Sge
               | A.Not     -> raise (Failure "NOT is a unary operator")
-              | A.Mod     -> raise (Failure "Not implemented")
               | A.Move    -> raise (Failure "Not implemented")
             ) e1' e2' "tmp" builder
         | SUnop(op, e) ->

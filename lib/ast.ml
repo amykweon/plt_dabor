@@ -1,6 +1,6 @@
 (* Abstract Syntax Tree and functions for printing it *)
 
-type op = Add | Sub | Mod | Multi | Divide | Equal | Neq | Less | EqLess | Greater | EqGreater | And | Or | Move | Not
+type op = Add | Sub | Mod | Multi | Equal | Neq | Less | EqLess | Greater | EqGreater | And | Or | Move | Not
 
 type dir = DiagL | DiagR | Hori | Vert
 
@@ -50,7 +50,6 @@ let string_of_op = function
   | Sub -> "-"
   | Mod -> "%"
   | Multi -> "*"
-  | Divide -> "/"
   | Equal -> "=="
   | Neq -> "!="
   | Less -> "<"
