@@ -1,6 +1,10 @@
 duple x;
 x = (1, 2);
 
+
+print_int x[0];
+print_int x[1];
+
 if (x[0] == 1) {
 	print_int 1;
 }
@@ -8,3 +12,8 @@ if (x[0] == 1) {
 if (x[1] == 2) {
 	print_int 1;
 }
+
+x[0] = 10;
+x[1] = 11;
+print_int x[0];
+print_int x[1];
