@@ -43,7 +43,7 @@ typ_rule:
    INT         { Int  }
  | BOOL        { Bool }
  | STRING      { String }
- | MATRIX      { Matrix }
+ | MATRIX LBRACK INT_LITERAL RBRACK LBRACK INT_LITERAL RBRACK   { Matrix($3, $6) }
  | VECTOR      { Vector }
  | DUPLE       { Duple }
  | STRUCT ID   { StructT($2) }

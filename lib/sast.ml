@@ -41,6 +41,7 @@ let rec string_sid_typ (t, i)=
     SId(s) -> s
   | SDupleAccess (id, x) -> id ^ "[" ^ string_of_int x ^ "]"
   | SStructAccess(id1, id2) -> id1 ^ "." ^ id2
+  | SDupleAccess (id, x) -> id ^ "[" ^ string_of_int x ^ "]"
   | SIndexAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
   | SIndexAccessVar(id, e) -> id ^ " [" ^ string_sid_typ e ^ "]"
