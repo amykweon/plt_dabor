@@ -159,6 +159,16 @@ let check (program: program) =
           if r_ty = Int then 
           (Int, SPrintInt(s_expr))
           else raise (Failure ("Cannot print data type other than int"))
+      | PrintStr (e) ->
+        let (r_ty, _) as s_expr = check_expr e in
+        if r_ty = String then 
+        (String, SPrintStr(s_expr))
+        else raise (Failure ("Cannot print data type other than string"))
+      | PrintMat (e) ->
+        let (r_ty, _) as s_expr = check_expr e in
+        match r_ty with
+          Matrix(r, c) -> (Matrix(r, c), SPrintMat(s_expr))
+        | _ -> raise (Failure ("Cannot print data type other than matrix"))
       in
 
     let check_bool_expr e =

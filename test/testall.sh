@@ -105,7 +105,7 @@ Check() {
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
-        # rm -f "${basename}.ll ${basename}.s ${basename}.exe"
+        cat "${basename}.out"
 	    rm -f $generatedfiles
 	fi
 	echo "OK"

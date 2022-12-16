@@ -44,6 +44,8 @@ rule token = parse
 | "not" { NOT }
 
 | "print_int" { PRINTI }
+| "print_string" { PRINTS }
+| "print_matrix" { PRINTM }
 
 | '.' { DOT }
 

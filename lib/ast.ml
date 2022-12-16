@@ -26,6 +26,8 @@ type expr =
   | StructCreate of string * ((string * expr) list)
   | DupleCreate of expr * expr
   | PrintInt of expr
+  | PrintStr of expr
+  | PrintMat of expr
 
 type stmt =
     Block of stmt list
@@ -93,6 +95,8 @@ let rec string_of_expr = function
   | StructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
   | DupleCreate(x, y) -> "(" ^ string_of_expr x ^ ", " ^ string_of_expr y ^ ")"
   | PrintInt(e) -> "print integer: " ^ string_of_expr e
+  | PrintStr(e) -> "print string: " ^ string_of_expr e
+  | PrintMat(e) -> "print string: " ^ string_of_expr e
 and struct_of_struct_e (id, e) = id ^ " : " ^ string_of_expr e ^ ";\n"
 
 let rec string_of_stmt = function

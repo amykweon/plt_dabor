@@ -78,7 +78,11 @@ let rec ltype_of_typ = (function
     let the_main = L.define_function "main" main_type the_module in
     let builder = L.builder_at_end context (L.entry_block the_main) in
 
-    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder in
+    let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
+    and string_format_str =  L.build_global_stringptr "%s\n" "fmt" builder
+    and matrixr_format_str = L.build_global_stringptr "%d " "fmt" builder
+    and matrixc_format_str = L.build_global_stringptr "\n" "fmt" builder in
+
     let lookup n = StringMap.find n global_vars in
     
     (* IdRule implementation *)
@@ -139,6 +143,13 @@ let rec ltype_of_typ = (function
             )e' "tmp" builder
         | SPrintInt (e) -> L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
 	          "printf" builder
+        | SPrintStr (e) -> L.build_call printf_func [| string_format_str ; (build_expr builder e) |] 
+          "printf" builder
+        | SPrintMat (e) -> 
+          let m = build_expr builder e in
+          let r = 
+            L.build_call printf_func [| int_format_str ; (build_expr builder e) |] 
+            "printf" builder
         | SAssign ((_, i), e) ->
           (* let id_n = build_idrule builder id_t in *)
           let add = match i with
@@ -162,10 +173,6 @@ let rec ltype_of_typ = (function
             | _ -> raise (Failure ("TODO: not implemented yet"))
           in add
         (*
-        | SCall ("print", [e]) | SCall ("printb", [e]) ->
-	          L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
-	          "printf" builder
-        | SAssign (id_t, e) -> raise (Failure "TODO")
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)

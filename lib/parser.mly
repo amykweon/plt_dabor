@@ -1,6 +1,6 @@
 %{ open Ast %}
 %token DOT SEMI COLON COMMA LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK
-%token PLUS MINUS MULTIPLY MOD ASSIGN PRINTI
+%token PLUS MINUS MULTIPLY MOD ASSIGN PRINTI PRINTS PRINTM
 %token EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE WHILE CONTINUE BREAK BOOL INT STRING DUPLE STRUCT
 %token VECTOR DIAGLEFT DIAGRIGHT HORIZONTAL VERTICAL MATRIX MATRIX_C MOVE TUPLE
@@ -117,4 +117,5 @@ expr_rule:
  | MATRIX_C LPAREN matrix_rule RPAREN    { MatrixCreate($3) }
  | LPAREN expr_rule COMMA expr_rule RPAREN    { DupleCreate($2, $4) }
  | PRINTI expr_rule                    { PrintInt($2) }
-
+ | PRINTS expr_rule                    { PrintStr($2) }
+ | PRINTM expr_rule                    { PrintMat($2) }

@@ -22,6 +22,8 @@ and sx =
   | SStructCreate of string * ((string * sexpr) list)
   | SDupleCreate of sexpr * sexpr
   | SPrintInt of sexpr
+  | SPrintStr of sexpr
+  | SPrintMat of sexpr
 
 type sstmt =
     SBlock of sstmt list
@@ -62,6 +64,8 @@ let rec string_of_sexpr (t, e) =
     | SStructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_se l) ^ "}"
     | SDupleCreate(x, y) -> "(" ^ string_of_sexpr x ^ ", " ^ string_of_sexpr y ^ ")"
     | SPrintInt(e) -> "print integer: " ^ string_of_sexpr e
+    | SPrintStr(e) -> "print string: " ^ string_of_sexpr e
+    | SPrintMat(e) -> "print matrix: " ^ string_of_sexpr e
   )
   and struct_of_struct_se (id, e) = id ^ " : " ^ string_of_sexpr e ^ ";\n"
    ^ ")"
