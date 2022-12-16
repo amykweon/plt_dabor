@@ -10,7 +10,7 @@
 LLI="/usr/local/opt/llvm@14/bin/lli"
 
 # Path to the LLVM compiler
-LLC="llc"
+LLC="/usr/local/opt/llvm@14/bin/llc"
 
 # Path to the C compiler
 CC="cc"
@@ -105,6 +105,7 @@ Check() {
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
+        # rm -f "${basename}.ll ${basename}.s ${basename}.exe"
 	    rm -f $generatedfiles
 	fi
 	echo "OK"
@@ -181,7 +182,7 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-basic.mc" # tests/fail-*.mc
+    files="tests/test-*.db" # tests/fail-*.db
 fi
 
 echo "files:"

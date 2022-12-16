@@ -16,7 +16,7 @@
 %left OR
 %left AND
 %left EQ NEQ LT LEQ GT GEQ
-%left MULTIPLY DIVIDE MOD
+%left MULTIPLY MOD
 %left PLUS MINUS
 %left MOVE
 
@@ -84,7 +84,7 @@ matrix_rule:
 id_rule:
   ID                                    { Id $1 }
 | ID DOT ID                             { StructAccess($1, $3) }
-| ID LBRACK INT_LITERAL RBRACK              { DupleAccess($1, $3) }
+| ID LBRACK INT_LITERAL RBRACK          { DupleAccess($1, $3) }
 | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { IndexAccess($1, $3, $5) }
 | ID LBRACK id_rule RBRACK              { IndexAccessVar($1, $3) }
 

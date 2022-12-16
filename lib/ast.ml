@@ -73,7 +73,7 @@ let string_of_matrix_l (l) = "[ " ^ String.concat "" (List.map string_of_matrix 
 let rec string_id_typ = function
     Id(s) -> s
   | StructAccess(id1, id2) -> id1 ^ "." ^ id2
-  | DupleAccess(id, x) -> id ^ "[" ^ string_of_int x ^ "]"
+  | DupleAccess (id, x) -> id ^ "[" ^ string_of_int x ^ "]"
   | IndexAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
   | IndexAccessVar (id, v) -> id ^ " [" ^ string_id_typ v ^ "]"
