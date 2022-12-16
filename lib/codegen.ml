@@ -97,7 +97,16 @@ let rec ltype_of_typ = (function
           let ptr = lookup id in
           let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
             L.build_load ptr_gep id builder
-      | _ -> raise (Failure "TODO")
+      | SIndexAccessVar (id, var) ->
+          let v' = build_idrule builder var in
+          let v'_iptr = L.build_in_bounds_gep v' [|L.const_int i32_t 0|] "" builder in
+          let i' = L.build_load v'_iptr "i" builder in
+          let v'_jptr = L.build_in_bounds_gep v' [|L.const_int i32_t 1|] "" builder in
+          let j' = L.build_load v'_jptr "j" builder in
+          let ptr = lookup id in
+          let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
+            L.build_load ptr_gep id builder
+      | _ -> raise( Failure ("structAccess TODO"))
 
     and build_expr builder ((_, e) : sexpr) = match e with
           SIntLit i  -> L.const_int i32_t i
