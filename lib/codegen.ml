@@ -91,6 +91,12 @@ let rec ltype_of_typ = (function
           L.build_load ptr v builder in
         let ptr_gep = L.build_in_bounds_gep ptr_load [|i'|] v builder in
           L.build_load ptr_gep v builder
+      | SIndexAccess (id, i, j) ->
+          let i' = L.const_int i32_t i in
+          let j' = L.const_int i32_t j in
+          let ptr = lookup id in
+          let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
+            L.build_load ptr_gep id builder
       | _ -> raise (Failure "TODO")
 
     and build_expr builder ((_, e) : sexpr) = match e with
@@ -137,6 +143,13 @@ let rec ltype_of_typ = (function
               let ptr_load = L.build_load ptr v builder in
               let ptr_gep = L.build_in_bounds_gep ptr_load [|i'|] v builder in
                 ignore(L.build_store e' ptr_gep builder); e'
+            | SIndexAccess (id, i, j) ->
+              let e' = build_expr builder e in
+              let i' = L.const_int i32_t i in
+              let j' = L.const_int i32_t j in
+              let ptr = lookup id in
+              let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
+              ignore(L.build_store e' ptr_gep builder); e'
             | _ -> raise (Failure ("TODO: not implemented yet"))
           in add
         (*
@@ -144,7 +157,6 @@ let rec ltype_of_typ = (function
 	          L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
 	          "printf" builder
         | SAssign (id_t, e) -> raise (Failure "TODO")
-        | SMatrixCreate (int_list) -> raise (Failure "TODO")
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
@@ -153,7 +165,6 @@ let rec ltype_of_typ = (function
           let innerArray   = List.map Array.of_list lists in
           let list2array  = Array.of_list ((List.map (L.const_array i32_t) innerArray)) in
             L.const_array (array_t i32_t (List.length (List.hd int_list))) list2array
-        
         | SDupleCreate (i1, i2) ->
           let int1 = build_expr builder i1 in
           let int2 = build_expr builder i2 in
