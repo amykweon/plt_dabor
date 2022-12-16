@@ -4,7 +4,7 @@ type op = Add | Sub | Mod | Multi | Equal | Neq | Less | EqLess | Greater | EqGr
 
 type dir = DiagL | DiagR | Hori | Vert
 
-type typ = Int | Bool | String | Vector | Matrix | StructT of string | Duple
+type typ = Int | Bool | String | Vector | Matrix of int * int | StructT of string | Duple
 
 type id_typ = 
     Id of string
@@ -108,7 +108,7 @@ let string_of_typ = function
   | Bool -> "bool"
   | String -> "string"
   | Vector -> "vector"
-  | Matrix -> "matrix"
+  | Matrix(i, j) -> "matrix [" ^ string_of_int i ^ ", " ^ string_of_int j ^ "]"
   | Duple -> "duple"
   | StructT l -> l
 

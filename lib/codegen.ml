@@ -14,6 +14,7 @@ let translate (globals, stmts) =
     and i8_t   = L.i8_type context
     and i1_t   = L.i1_type context
     and string_t = (L.pointer_type (L.i8_type context))
+    and array_t = L.array_type
     and void_t = L.void_type context
     in
 
@@ -24,6 +25,7 @@ let translate (globals, stmts) =
     | A.Bool  -> i1_t
     | A.String -> string_t
     | A.Duple -> L.array_type i32_t 2
+    | A.Matrix(r,c) -> array_t (array_t i32_t c) r
     | _ -> void_t
   in
   
@@ -36,6 +38,7 @@ let translate (globals, stmts) =
           let init = match t with
             A.String -> L.const_pointer_null (ltype_of_typ t)
           | A.Duple -> L.const_pointer_null (L.pointer_type i32_t)
+          | A.Matrix(_, _) -> L.const_pointer_null (ltype_of_typ t)
           | _ -> L.const_int (ltype_of_typ t) 0
         in
           StringMap.add n (L.define_global n init the_module) m
@@ -145,6 +148,12 @@ let rec ltype_of_typ = (function
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
+        | SMatrixCreate (int_list) ->
+          let lists       = List.map (List.map (L.const_int i32_t)) int_list in
+          let innerArray   = List.map Array.of_list lists in
+          let list2array  = Array.of_list ((List.map (L.const_array i32_t) innerArray)) in
+            L.const_array (array_t i32_t (List.length (List.hd int_list))) list2array
+        
         | SDupleCreate (i1, i2) ->
           let int1 = build_expr builder i1 in
           let int2 = build_expr builder i2 in
