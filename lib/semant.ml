@@ -67,19 +67,20 @@ let check (program: program) =
           else
             raise (Failure ("tried to use variable indexing with invalid types"))
       | IndexAccess(var, i, j) -> 
-        let lt = type_of_identifier var in
         let err = "trying to use a non matrix variable for index" in
-        if (lt != Matrix)
-          then raise (Failure err)
-        else
-        (Int, SIndexAccess(var, i, j))
+        let lt = type_of_identifier var in
+        let return = match lt with
+            Matrix (_, _) -> (Int, SIndexAccess(var, i, j))
+          | _ -> raise (Failure err)
+        in return
       | IndexAccessVar(v_name, index) -> (
         let (id_ty, index') = check_id_typ index in
-        let vt = type_of_identifier v_name in
-          if (vt = Matrix && id_ty = Duple) then
-            (Int, SIndexAccessVar(v_name, (id_ty, index')))
-          else
-            raise (Failure ("tried to use variable indexing with invalid types"))
+        let vt = type_of_identifier v_name in 
+        let return = match vt with
+            Matrix (_, _) -> if (id_ty = Duple) then (Int, SIndexAccessVar(v_name, (id_ty, index')))
+              else raise (Failure ("tried to use variable indexing with invalid types"))
+          | _ -> raise (Failure ("tried to use variable indexing with invalid types"))
+        in return
       )
   in
   
@@ -91,9 +92,11 @@ let check (program: program) =
       | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
       | DupleCreate(e1, e2) -> let i = check_expr e1 in let j = check_expr e2 in (Duple, SDupleCreate(i, j))
       | MatrixCreate(els) -> 
+        let col = List.length els in
+        let row = (List.length (List.nth els 0)) in
         let good = List.for_all (fun l -> (List.length l) = (List.length (List.nth els 0))) els in
         if good then 
-          (Matrix, SMatrixCreate(els))
+          (Matrix(row, col), SMatrixCreate(els))
         else raise (Failure ("tried to init matrix with differing row lengths"))
       | StructCreate(struct_name, fields) -> (
         let check_struct_object_creation ((s_f_name, s_f_type)) ((o_f_name, o_f_expr)) =
