@@ -9,6 +9,7 @@ The project is separated into the following directories, managed by the [dune](h
 - `doc`: documentations about dabor
 - `lib`: the core library implementation - scanner, parser, ast, and more
 - `test`: different test files
+- `pdabor`: initialized project
 
 ## How to Build??
 First make sure that you have `dune` installed. Following [here](https://dune.readthedocs.io/en/stable/quick-start.html#install-dune) for guides on how to install.
