@@ -24,6 +24,11 @@ to execute the compiler, run
 dune exec dabor
 ```
 
+to run test files, run
+```
+dune runtest
+```
+
 ## Credit
 Seoyoung Kweon:
 - basic implementation of parser.mly, scanner.mll
