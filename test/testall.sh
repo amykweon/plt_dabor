@@ -181,7 +181,7 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-*.db" # tests/fail-*.db
+    files="tests/test-*.db tests/fail-*.db"
 fi
 
 echo "files:"

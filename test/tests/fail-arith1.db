@@ -1,0 +1,7 @@
+string x;
+string y;
+
+x = "hello";
+y = "world";
+
+x + y;

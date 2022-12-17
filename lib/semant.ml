@@ -63,14 +63,16 @@ let check (program: program) =
       | DupleAccess (var, i) -> 
         let vt = type_of_identifier var in
           if (vt = Duple) then
-            (Int, SDupleAccess(var, i))
+            if (i < 2) then (Int, SDupleAccess(var, i))
+            else raise (Failure ("duple index out of bound"))
           else
             raise (Failure ("tried to use variable indexing with invalid types"))
       | IndexAccess(var, i, j) -> 
         let err = "trying to use a non matrix variable for index" in
         let lt = type_of_identifier var in
         let return = match lt with
-            Matrix (_, _) -> (Int, SIndexAccess(var, i, j))
+            Matrix (i_m, j_m) -> if (i < i_m && j < j_m) then (Int, SIndexAccess(var, i, j)) 
+              else raise (Failure ("matrix index out of bound"))
           | _ -> raise (Failure err)
         in return
       | IndexAccessVar(v_name, index) -> (
@@ -89,8 +91,11 @@ let check (program: program) =
       | BoolLit l -> (Bool, SBoolLit l)
       | StringLit l -> (String, SStringLit l)
       | IdRule i -> let (typ, sx) = check_id_typ i in (typ, SIdRule(typ, sx))
-      | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
-      | DupleCreate(e1, e2) -> let i = check_expr e1 in let j = check_expr e2 in (Duple, SDupleCreate(i, j))
+      | VectorCreate(dir, num) -> let (type_n, _) as snum = check_expr num in 
+          if (type_n = Int) then (Vector, SVectorCreate(dir, snum)) else raise (Failure ("vector magnitude only accepts integer type"))
+      | DupleCreate(e1, e2) -> let (type_i, _) as i = check_expr e1 in let (type_j, _) as j = check_expr e2 in
+        if (type_i = Int && type_j = Int) then (Duple, SDupleCreate(i, j))
+        else raise (Failure ("duple only takes in integer elements"))
       | MatrixCreate(els) -> 
         let col = List.length els in
         let row = (List.length (List.nth els 0)) in
@@ -116,11 +121,6 @@ let check (program: program) =
         let (r_ty, _) as s_expr = check_expr e in
         let (id_typ, _) as s_id = check_id_typ id in
         if (id_typ = r_ty) then
-          (* match name, expr' with
-            | SId m_name, SMatrixCreate matrix -> 
-              let matrix_info = StringMap.add m_name (List.length matrix, List.length (List.nth matrix 0)) matrix_info in
-              (id_typ, SAssign(s_id, s_expr))
-            | _ -> (id_typ, SAssign(s_id, s_expr)) *)
           (id_typ, SAssign(s_id, s_expr))
         else raise (Failure ("illegal assignment, types don't match up, LHS type: " ^ string_of_typ id_typ ^ " RHS type: " ^ string_of_typ r_ty))
       | Binop(e1, op, e2) as e ->
@@ -153,7 +153,14 @@ let check (program: program) =
             | _ -> raise (Failure err)
           else  
             raise (Failure err)
-      | Unop(op, e1) -> let (t1, e1') = check_expr e1 in (t1, SUnop (op, (t1, e1')))
+      | Unop(op, e1) -> 
+        let (t1, e1') = check_expr e1 in
+        let err = "illegal unary operator" in
+        let t = match op with
+            Not -> if (t1 = Bool) then Bool else raise (Failure err)
+          | Neg -> if (t1 = Int) then Int else raise (Failure err)
+          | _ -> raise (Failure err)
+        in (t, SUnop (op, (t1, e1')))
       | PrintInt(e) -> 
           let (r_ty, _) as s_expr = check_expr e in
           if r_ty = Int then 

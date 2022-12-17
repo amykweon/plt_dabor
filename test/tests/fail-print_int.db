@@ -1,0 +1,4 @@
+string x;
+x = "hello";
+
+print_int x;

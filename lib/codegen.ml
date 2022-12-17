@@ -132,13 +132,15 @@ let rec ltype_of_typ = (function
 	            | A.Greater -> L.build_icmp L.Icmp.Sgt
 	            | A.EqGreater     -> L.build_icmp L.Icmp.Sge
               | A.Not     -> raise (Failure "NOT is a unary operator")
+              | A.Neg     -> raise (Failure "NEG is a unary operator")
               | A.Move    -> raise (Failure "Not implemented")
             ) e1' e2' "tmp" builder
         | SUnop(op, e) ->
             let e' = build_expr builder e in
             (match op with
                 A.Not -> L.build_not
-              | _ -> raise (Failure "No other unary operation supported than NOT")
+              | A.Neg -> L.build_neg
+              | _ -> raise (Failure "No other unary operation supported than NOT and NEG")
             )e' "tmp" builder
         | SPrintInt (e) -> L.build_call printf_func [| int_format_str ; (build_expr builder e) |] "printf" builder
         | SPrintStr (e) -> L.build_call printf_func [| string_format_str ; (build_expr builder e) |] "printf" builder

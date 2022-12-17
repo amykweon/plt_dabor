@@ -107,7 +107,8 @@ expr_rule:
  | expr_rule OR expr_rule                { Binop ($1, Or, $3) }
  | expr_rule MOD expr_rule               { Binop ($1, Mod, $3) }
  | expr_rule MOVE expr_rule              { Binop ($1, Move, $3) }
- | NOT expr_rule                         { Unop(Not, $2) }
+ | MINUS expr_rule                       { Unop (Neg, $2) }
+ | NOT expr_rule                         { Unop (Not, $2) }
  | DIAGLEFT LPAREN expr_rule RPAREN    { VectorCreate(DiagL, $3) }
  | DIAGRIGHT LPAREN expr_rule RPAREN   { VectorCreate(DiagR, $3) }
  | HORIZONTAL LPAREN expr_rule RPAREN  { VectorCreate(Hori, $3) }
