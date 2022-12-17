@@ -1,18 +1,19 @@
 (* Abstract Syntax Tree and functions for printing it *)
 
-type op = Add | Sub | Mod | Multi | Divide | Equal | Neq | Less | EqLess | Greater | EqGreater | And | Or | Move | Not
+type op = Add | Sub | Mod | Multi | Equal | Neq | Less | EqLess | Greater | EqGreater | And | Or | Move | Not | Neg
 
 type dir = DiagL | DiagR | Hori | Vert
 
-type typ = Int | Bool | String | Vector | Matrix | StructT of string | Duple
+type typ = Int | Bool | String | Vector | Matrix of int * int | StructT of string | Duple
 
 type id_typ = 
     Id of string
   | StructAccess of string * string
+  | DupleAccess of string * int
   | IndexAccess of string * int * int
-  | IndexAccessVar of string * expr
+  | IndexAccessVar of string * id_typ
 
-and expr =
+type expr =
     IntLit of int
   | BoolLit of bool
   | StringLit of string
@@ -25,6 +26,8 @@ and expr =
   | StructCreate of string * ((string * expr) list)
   | DupleCreate of expr * expr
   | PrintInt of expr
+  | PrintStr of expr
+  | PrintMat of id_typ
 
 type stmt =
     Block of stmt list
@@ -49,7 +52,6 @@ let string_of_op = function
   | Sub -> "-"
   | Mod -> "%"
   | Multi -> "*"
-  | Divide -> "/"
   | Equal -> "=="
   | Neq -> "!="
   | Less -> "<"
@@ -59,6 +61,7 @@ let string_of_op = function
   | And -> "&&"
   | Or -> "||"
   | Not -> "!"
+  | Neg -> "!"
   | Move -> "move" 
 
 let string_of_dir = function
@@ -73,10 +76,12 @@ let string_of_matrix_l (l) = "[ " ^ String.concat "" (List.map string_of_matrix 
 let rec string_id_typ = function
     Id(s) -> s
   | StructAccess(id1, id2) -> id1 ^ "." ^ id2
+  | DupleAccess (id, x) -> id ^ "[" ^ string_of_int x ^ "]"
   | IndexAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
-  | IndexAccessVar (id, v) -> id ^ " [" ^ string_of_expr v ^ "]"
-and string_of_expr = function
+  | IndexAccessVar (id, v) -> id ^ " [" ^ string_id_typ v ^ "]"
+
+let rec string_of_expr = function
     IntLit(l) -> string_of_int l
   | BoolLit(true) -> "true"
   | BoolLit(false) -> "false"
@@ -91,6 +96,8 @@ and string_of_expr = function
   | StructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
   | DupleCreate(x, y) -> "(" ^ string_of_expr x ^ ", " ^ string_of_expr y ^ ")"
   | PrintInt(e) -> "print integer: " ^ string_of_expr e
+  | PrintStr(e) -> "print string: " ^ string_of_expr e
+  | PrintMat(e) -> "print string: " ^ string_id_typ e
 and struct_of_struct_e (id, e) = id ^ " : " ^ string_of_expr e ^ ";\n"
 
 let rec string_of_stmt = function
@@ -106,7 +113,7 @@ let string_of_typ = function
   | Bool -> "bool"
   | String -> "string"
   | Vector -> "vector"
-  | Matrix -> "matrix"
+  | Matrix(i, j) -> "matrix [" ^ string_of_int i ^ ", " ^ string_of_int j ^ "]"
   | Duple -> "duple"
   | StructT l -> l
 

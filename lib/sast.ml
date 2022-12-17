@@ -4,10 +4,11 @@ type sid_typ = typ * si
 and si =
     SId of string
   | SStructAccess of string * string
+  | SDupleAccess of string * int
   | SIndexAccess of string * int * int
-  | SIndexAccessVar of string * sexpr
+  | SIndexAccessVar of string * sid_typ
 
-and sexpr = typ * sx
+type sexpr = typ * sx
 and sx =
     SIntLit of int
   | SBoolLit of bool
@@ -21,6 +22,8 @@ and sx =
   | SStructCreate of string * ((string * sexpr) list)
   | SDupleCreate of sexpr * sexpr
   | SPrintInt of sexpr
+  | SPrintStr of sexpr
+  | SPrintMat of sid_typ
 
 type sstmt =
     SBlock of sstmt list
@@ -38,12 +41,14 @@ type sprogram = {
 let rec string_sid_typ (t, i)=
 "(" ^ string_of_typ t ^ " : " ^ (match i with
     SId(s) -> s
+  | SDupleAccess (id, x) -> id ^ "[" ^ string_of_int x ^ "]"
   | SStructAccess(id1, id2) -> id1 ^ "." ^ id2
   | SIndexAccess(id, x, y) ->
     id ^ " [" ^ string_of_int x ^ ", " ^ string_of_int y ^ "]"
-  | SIndexAccessVar(id, e) -> id ^ " [" ^ string_of_sexpr e ^ "]"
+  | SIndexAccessVar(id, e) -> id ^ " [" ^ string_sid_typ e ^ "]"
  ) ^ ")"
-and string_of_sexpr (t, e) = 
+
+let rec string_of_sexpr (t, e) = 
   "(" ^ string_of_typ t ^ " : " ^ (match e with
       SIntLit(l) -> string_of_int l
     | SBoolLit(true) -> "true"
@@ -59,6 +64,8 @@ and string_of_sexpr (t, e) =
     | SStructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_se l) ^ "}"
     | SDupleCreate(x, y) -> "(" ^ string_of_sexpr x ^ ", " ^ string_of_sexpr y ^ ")"
     | SPrintInt(e) -> "print integer: " ^ string_of_sexpr e
+    | SPrintStr(e) -> "print string: " ^ string_of_sexpr e
+    | SPrintMat(e) -> "print matrix: " ^ string_sid_typ e
   )
   and struct_of_struct_se (id, e) = id ^ " : " ^ string_of_sexpr e ^ ";\n"
    ^ ")"

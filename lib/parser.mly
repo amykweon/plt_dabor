@@ -1,6 +1,6 @@
 %{ open Ast %}
 %token DOT SEMI COLON COMMA LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK
-%token PLUS MINUS MULTIPLY DIVIDE MOD ASSIGN PRINTI
+%token PLUS MINUS MULTIPLY MOD ASSIGN PRINTI PRINTS PRINTM
 %token EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE WHILE CONTINUE BREAK BOOL INT STRING DUPLE STRUCT
 %token VECTOR DIAGLEFT DIAGRIGHT HORIZONTAL VERTICAL MATRIX MATRIX_C MOVE TUPLE
@@ -16,7 +16,7 @@
 %left OR
 %left AND
 %left EQ NEQ LT LEQ GT GEQ
-%left MULTIPLY DIVIDE MOD
+%left MULTIPLY MOD
 %left PLUS MINUS
 %left MOVE
 
@@ -43,7 +43,7 @@ typ_rule:
    INT         { Int  }
  | BOOL        { Bool }
  | STRING      { String }
- | MATRIX      { Matrix }
+ | MATRIX LBRACK INT_LITERAL RBRACK LBRACK INT_LITERAL RBRACK   { Matrix($3, $6) }
  | VECTOR      { Vector }
  | DUPLE       { Duple }
  | STRUCT ID   { StructT($2) }
@@ -84,8 +84,9 @@ matrix_rule:
 id_rule:
   ID                                    { Id $1 }
 | ID DOT ID                             { StructAccess($1, $3) }
+| ID LBRACK INT_LITERAL RBRACK          { DupleAccess($1, $3) }
 | ID LBRACK INT_LITERAL COMMA INT_LITERAL RBRACK { IndexAccess($1, $3, $5) }
-| ID LBRACK expr_rule RBRACK              { IndexAccessVar($1, $3) }
+| ID LBRACK id_rule RBRACK              { IndexAccessVar($1, $3) }
 
 expr_rule:
    BLIT                                  { BoolLit $1 }
@@ -96,7 +97,6 @@ expr_rule:
  | expr_rule PLUS expr_rule              { Binop ($1, Add, $3) }
  | expr_rule MINUS expr_rule             { Binop ($1, Sub, $3) }
  | expr_rule MULTIPLY expr_rule          { Binop ($1, Multi, $3) }
- | expr_rule DIVIDE expr_rule            { Binop ($1, Divide, $3) }
  | expr_rule EQ expr_rule                { Binop ($1, Equal, $3) }
  | expr_rule NEQ expr_rule               { Binop ($1, Neq, $3) }
  | expr_rule LT expr_rule                { Binop ($1, Less, $3) }
@@ -107,7 +107,8 @@ expr_rule:
  | expr_rule OR expr_rule                { Binop ($1, Or, $3) }
  | expr_rule MOD expr_rule               { Binop ($1, Mod, $3) }
  | expr_rule MOVE expr_rule              { Binop ($1, Move, $3) }
- | NOT expr_rule                         { Unop(Not, $2) }
+ | MINUS expr_rule                       { Unop (Neg, $2) }
+ | NOT expr_rule                         { Unop (Not, $2) }
  | DIAGLEFT LPAREN expr_rule RPAREN    { VectorCreate(DiagL, $3) }
  | DIAGRIGHT LPAREN expr_rule RPAREN   { VectorCreate(DiagR, $3) }
  | HORIZONTAL LPAREN expr_rule RPAREN  { VectorCreate(Hori, $3) }
@@ -117,4 +118,5 @@ expr_rule:
  | MATRIX_C LPAREN matrix_rule RPAREN    { MatrixCreate($3) }
  | LPAREN expr_rule COMMA expr_rule RPAREN    { DupleCreate($2, $4) }
  | PRINTI expr_rule                    { PrintInt($2) }
-
+ | PRINTS expr_rule                    { PrintStr($2) }
+ | PRINTM id_rule                      { PrintMat($2) }

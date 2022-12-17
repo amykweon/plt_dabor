@@ -1,0 +1,32 @@
+bool x;
+bool y;
+bool z;
+
+x = true;
+y = true;
+z = false;
+
+if (x and y) {
+	print_int 1;
+}
+
+if (not (x and z)) {
+	print_int 1;
+}
+
+if (x or z) {
+	print_int 1;
+}
+
+if (x or y) {
+	print_int 1;
+}
+
+y = not y;
+if (not (y or z)) {
+	print_int 1;
+}
+
+if (not (y and z)) {
+	print_int 1;
+}

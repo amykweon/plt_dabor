@@ -1,0 +1,6 @@
+int y;
+matrix[2][2] x;
+
+x = matrix_create([[1,2],[3,4]]);
+y = 2;
+x[y];

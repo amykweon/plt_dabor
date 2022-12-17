@@ -60,33 +60,48 @@ let check (program: program) =
           )
           | _ -> raise (Failure ("trying to use a non struct variable as a struct"))
       )
-      | IndexAccess(var, i, j) -> 
-        let lt = type_of_identifier var in
-        let err = "trying to use a non matrix variable for index" in
-        if (lt != Matrix)
-          then raise (Failure err)
-        else
-        (Int, SIndexAccess(var, i, j))
-      | IndexAccessVar(v_name, index) -> (
-        let (id_ty, index') = check_expr index in
-        let vt = type_of_identifier v_name in
-          if (vt = Matrix && id_ty = Duple || vt = Duple && id_ty = Int) then
-            (Int, SIndexAccessVar(v_name, (id_ty, index')))
+      | DupleAccess (var, i) -> 
+        let vt = type_of_identifier var in
+          if (vt = Duple) then
+            if (i < 2) then (Int, SDupleAccess(var, i))
+            else raise (Failure ("duple index out of bound"))
           else
             raise (Failure ("tried to use variable indexing with invalid types"))
+      | IndexAccess(var, i, j) -> 
+        let err = "trying to use a non matrix variable for index" in
+        let lt = type_of_identifier var in
+        let return = match lt with
+            Matrix (i_m, j_m) -> if (i < i_m && j < j_m) then (Int, SIndexAccess(var, i, j)) 
+              else raise (Failure ("matrix index out of bound"))
+          | _ -> raise (Failure err)
+        in return
+      | IndexAccessVar(v_name, index) -> (
+        let (id_ty, index') = check_id_typ index in
+        let vt = type_of_identifier v_name in 
+        let return = match vt with
+            Matrix (_, _) -> if (id_ty = Duple) then (Int, SIndexAccessVar(v_name, (id_ty, index')))
+              else raise (Failure ("tried to use variable indexing with invalid types"))
+          | _ -> raise (Failure ("tried to use variable indexing with invalid types"))
+        in return
       )
-
-  and check_expr = function
+  in
+  
+  let rec check_expr = function
         IntLit l -> (Int, SIntLit l)
       | BoolLit l -> (Bool, SBoolLit l)
       | StringLit l -> (String, SStringLit l)
       | IdRule i -> let (typ, sx) = check_id_typ i in (typ, SIdRule(typ, sx))
-      | VectorCreate(dir, num) -> let snum = check_expr num in (Vector, SVectorCreate(dir, snum))
-      | DupleCreate(e1, e2) -> let i = check_expr e1 in let j = check_expr e2 in (Duple, SDupleCreate(i, j))
+      | VectorCreate(dir, num) -> let (type_n, _) as snum = check_expr num in 
+          if (type_n = Int) then (Vector, SVectorCreate(dir, snum)) else raise (Failure ("vector magnitude only accepts integer type"))
+      | DupleCreate(e1, e2) -> let (type_i, _) as i = check_expr e1 in let (type_j, _) as j = check_expr e2 in
+        if (type_i = Int && type_j = Int) then (Duple, SDupleCreate(i, j))
+        else raise (Failure ("duple only takes in integer elements"))
       | MatrixCreate(els) -> 
+        let col = List.length els in
+        let row = (List.length (List.nth els 0)) in
         let good = List.for_all (fun l -> (List.length l) = (List.length (List.nth els 0))) els in
         if good then 
-          (Matrix, SMatrixCreate(els))
+          (Matrix(row, col), SMatrixCreate(els))
         else raise (Failure ("tried to init matrix with differing row lengths"))
       | StructCreate(struct_name, fields) -> (
         let check_struct_object_creation ((s_f_name, s_f_type)) ((o_f_name, o_f_expr)) =
@@ -106,11 +121,6 @@ let check (program: program) =
         let (r_ty, _) as s_expr = check_expr e in
         let (id_typ, _) as s_id = check_id_typ id in
         if (id_typ = r_ty) then
-          (* match name, expr' with
-            | SId m_name, SMatrixCreate matrix -> 
-              let matrix_info = StringMap.add m_name (List.length matrix, List.length (List.nth matrix 0)) matrix_info in
-              (id_typ, SAssign(s_id, s_expr))
-            | _ -> (id_typ, SAssign(s_id, s_expr)) *)
           (id_typ, SAssign(s_id, s_expr))
         else raise (Failure ("illegal assignment, types don't match up, LHS type: " ^ string_of_typ id_typ ^ " RHS type: " ^ string_of_typ r_ty))
       | Binop(e1, op, e2) as e ->
@@ -124,7 +134,7 @@ let check (program: program) =
         if t1 = t2 then
           (* Determine expression type based on operator and operand types *)
           let t = match op with
-              Add | Sub | Multi | Divide | Mod when (t1 = Int) -> Int
+              Add | Sub | Multi | Mod when (t1 = Int) -> Int
             | Add | Sub when (t1 = Vector) -> Vector
             | Equal | Neq -> Bool
             | Less | EqLess | Greater | EqGreater when t1 = Int -> Bool
@@ -139,16 +149,33 @@ let check (program: program) =
             | _ -> raise (Failure err)
           else if ((t1 = Vector && t2 = Int) || (t2 = Vector && t1 = Int)) then
             match op with
-              Multi | Divide -> (Vector, SBinop((t1, e1'), op, (t2, e2')))
+              Multi | Mod -> (Vector, SBinop((t1, e1'), op, (t2, e2')))
             | _ -> raise (Failure err)
           else  
             raise (Failure err)
-      | Unop(op, e1) -> let (t1, e1') = check_expr e1 in (t1, SUnop (op, (t1, e1')))
+      | Unop(op, e1) -> 
+        let (t1, e1') = check_expr e1 in
+        let err = "illegal unary operator" in
+        let t = match op with
+            Not -> if (t1 = Bool) then Bool else raise (Failure err)
+          | Neg -> if (t1 = Int) then Int else raise (Failure err)
+          | _ -> raise (Failure err)
+        in (t, SUnop (op, (t1, e1')))
       | PrintInt(e) -> 
           let (r_ty, _) as s_expr = check_expr e in
           if r_ty = Int then 
           (Int, SPrintInt(s_expr))
           else raise (Failure ("Cannot print data type other than int"))
+      | PrintStr (e) ->
+        let (r_ty, _) as s_expr = check_expr e in
+        if r_ty = String then 
+        (String, SPrintStr(s_expr))
+        else raise (Failure ("Cannot print data type other than string"))
+      | PrintMat (e) ->
+        let (id_ty, _) as s_id_typ = check_id_typ e in
+        match id_ty with
+          Matrix(r, c) -> (Matrix(r, c), SPrintMat(s_id_typ))
+        | _ -> raise (Failure ("Cannot print data type other than matrix"))
       in
 
     let check_bool_expr e =
@@ -174,4 +201,4 @@ let check (program: program) =
         SWhile(check_bool_expr e, check_stmt st)
 
     in (* body of check_func *)
-    (struct_field_info, vdecls, check_stmt_list stmts)
+    (vdecls, check_stmt_list stmts)

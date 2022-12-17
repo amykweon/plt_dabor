@@ -44,6 +44,8 @@ rule token = parse
 | "not" { NOT }
 
 | "print_int" { PRINTI }
+| "print_string" { PRINTS }
+| "print_matrix" { PRINTM }
 
 | '.' { DOT }
 
@@ -60,7 +62,6 @@ rule token = parse
 | '+' { PLUS }
 | '-' { MINUS }
 | '*' { MULTIPLY }
-| '/' { DIVIDE }
 | '=' { ASSIGN }
 | "==" { EQ }
 | "!=" { NEQ }

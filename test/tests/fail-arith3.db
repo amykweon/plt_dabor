@@ -1,0 +1,7 @@
+int x;
+string y;
+
+x = 10;
+y = "string";
+
+x * y;
