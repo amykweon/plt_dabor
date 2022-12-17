@@ -118,4 +118,4 @@ expr_rule:
  | LPAREN expr_rule COMMA expr_rule RPAREN    { DupleCreate($2, $4) }
  | PRINTI expr_rule                    { PrintInt($2) }
  | PRINTS expr_rule                    { PrintStr($2) }
- | PRINTM expr_rule                    { PrintMat($2) }
+ | PRINTM id_rule                      { PrintMat($2) }

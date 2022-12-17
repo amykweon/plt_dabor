@@ -105,7 +105,6 @@ Check() {
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
-        cat "${basename}.out"
 	    rm -f $generatedfiles
 	fi
 	echo "OK"

@@ -80,8 +80,7 @@ let rec ltype_of_typ = (function
 
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
     and string_format_str =  L.build_global_stringptr "%s\n" "fmt" builder
-    and matrixr_format_str = L.build_global_stringptr "%d " "fmt" builder
-    and matrixc_format_str = L.build_global_stringptr "\n" "fmt" builder in
+    in
 
     let lookup n = StringMap.find n global_vars in
     
@@ -141,17 +140,28 @@ let rec ltype_of_typ = (function
                 A.Not -> L.build_not
               | _ -> raise (Failure "No other unary operation supported than NOT")
             )e' "tmp" builder
-        | SPrintInt (e) -> L.build_call printf_func [| int_format_str ; (build_expr builder e) |]
-	          "printf" builder
-        | SPrintStr (e) -> L.build_call printf_func [| string_format_str ; (build_expr builder e) |] 
-          "printf" builder
-        | SPrintMat (e) -> 
-          let m = build_expr builder e in
-          let r = 
-            L.build_call printf_func [| int_format_str ; (build_expr builder e) |] 
-            "printf" builder
+        | SPrintInt (e) -> L.build_call printf_func [| int_format_str ; (build_expr builder e) |] "printf" builder
+        | SPrintStr (e) -> L.build_call printf_func [| string_format_str ; (build_expr builder e) |] "printf" builder
+        | SPrintMat (id) -> let print_inst = match id with
+            A.Matrix(r, c), SId id' ->
+              let m = lookup id' in
+              let (print_str, print_array) =
+                let rec row_print r' c' str array = 
+                  if c' < c then 
+                    let ptr_gep = L.build_gep m [|L.const_int i32_t 0 ; L.const_int i32_t r'; L.const_int i32_t c'|] "" builder in
+                    let ele = L.build_load ptr_gep "" builder in 
+                    row_print r' (c' + 1) (str ^ "%d ") (Array.append array [| ele |])
+                  else (str, array)
+                in
+                let rec col_print r' c' str array =
+                  if r' < r then
+                    let (str_array, row_array) = row_print r' c' str array in col_print (r'+1) 0 (str_array ^ "\n") row_array
+                  else (str, array)
+                in col_print 0 0 "" [||]
+              in L.build_call printf_func (Array.append [|(L.build_global_stringptr print_str "fmt" builder) |] print_array) "printf" builder
+          | _ -> raise (Failure "print_matrix only supports matrix type")
+          in print_inst
         | SAssign ((_, i), e) ->
-          (* let id_n = build_idrule builder id_t in *)
           let add = match i with
               SId s -> let id_add = (lookup s) in
                 let e' = build_expr builder e in
@@ -167,6 +177,16 @@ let rec ltype_of_typ = (function
               let e' = build_expr builder e in
               let i' = L.const_int i32_t i in
               let j' = L.const_int i32_t j in
+              let ptr = lookup id in
+              let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
+              ignore(L.build_store e' ptr_gep builder); e'
+            | SIndexAccessVar (id, var) ->
+              let e' = build_expr builder e in
+              let v' = build_idrule builder var in
+              let v'_iptr = L.build_in_bounds_gep v' [|L.const_int i32_t 0|] "" builder in
+              let i' = L.build_load v'_iptr "i" builder in
+              let v'_jptr = L.build_in_bounds_gep v' [|L.const_int i32_t 1|] "" builder in
+              let j' = L.build_load v'_jptr "j" builder in
               let ptr = lookup id in
               let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
               ignore(L.build_store e' ptr_gep builder); e'

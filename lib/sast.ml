@@ -23,7 +23,7 @@ and sx =
   | SDupleCreate of sexpr * sexpr
   | SPrintInt of sexpr
   | SPrintStr of sexpr
-  | SPrintMat of sexpr
+  | SPrintMat of sid_typ
 
 type sstmt =
     SBlock of sstmt list
@@ -65,7 +65,7 @@ let rec string_of_sexpr (t, e) =
     | SDupleCreate(x, y) -> "(" ^ string_of_sexpr x ^ ", " ^ string_of_sexpr y ^ ")"
     | SPrintInt(e) -> "print integer: " ^ string_of_sexpr e
     | SPrintStr(e) -> "print string: " ^ string_of_sexpr e
-    | SPrintMat(e) -> "print matrix: " ^ string_of_sexpr e
+    | SPrintMat(e) -> "print matrix: " ^ string_sid_typ e
   )
   and struct_of_struct_se (id, e) = id ^ " : " ^ string_of_sexpr e ^ ";\n"
    ^ ")"

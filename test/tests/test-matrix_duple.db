@@ -5,12 +5,20 @@ x = matrix_create([[1,2],[3,4]]);
 
 y = (1,1);
 print_int x[y];
+x[y] = 14;
+print_int x[y];
 
 y = (1,0);
+print_int x[y];
+x[y] = 13;
 print_int x[y];
 
 y = (0,1);
 print_int x[y];
+x[y] = 12;
+print_int x[y];
 
 y = (0,0);
+print_int x[y];
+x[y] = 11;
 print_int x[y];
