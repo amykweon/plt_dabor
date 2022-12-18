@@ -385,8 +385,20 @@ let rec ltype_of_typ = (function
         | SAssign ((_, i), e) ->
           let add = match i with
               SId s -> let id_add = (lookup s) in
-                let e' = build_expr builder e in
-                ignore(llstore e' id_add builder); e'
+                let e' = build_expr builder e in (* dummy computation *)
+                (match e with
+                (_, SStructCreate(s_name, field_init_list)) -> 
+                  let initStructField (f_name, f_expr) = 
+                    let f_idx = get_field_idx s_name f_name in
+                    let i' = L.const_int i32_t f_idx in
+                    let e' = build_expr builder f_expr in
+                    let ptr_gep = L.build_gep id_add [|L.const_int i32_t 0; i'|] s_name builder in
+                    ignore(llstore e' ptr_gep builder);
+                  in
+                  ignore(List.map initStructField field_init_list);
+                  e' (* dummy return *)
+                  (* ignore(StringMap.add s e' global_vars); e' *)
+                | _ -> ignore(llstore e' id_add builder); e' )
                 (* ignore(L.build_store e' id_add builder); e' *)
             | SDupleAccess (v, index) -> 
               let i' = L.const_int i32_t index in
@@ -422,9 +434,6 @@ let rec ltype_of_typ = (function
                 ignore(llstore e' ptr_gep builder); e'
                 (* ignore(L.build_store e' ptr_gep builder); e' *)
           in add
-        (*
-        | SVectorCreate (dir, e) -> raise (Failure "TODO")
-        *)
         | SVectorCreate (i1, i2) ->
           let int1 = build_expr builder i1 in
           let int2 = build_expr builder i2 in
@@ -443,7 +452,23 @@ let rec ltype_of_typ = (function
         | SStructCreate (s_name, _) ->
           let s_fields = StringMap.find s_name struct_field_info  in
           L.const_named_struct (ltype_of_typ (A.StructT(s_name))) (Array.of_list (List.map createStructFields s_fields))
-          (* L.const_named_struct (ltype_of_typ (A.StructT(s_name))) (Array.of_list (List.map (fun f -> L.const_pointer_null (ltype_of_typ (snd f))) s_fields)) *)
+          (* let s_global = L.define_global s_name s_ptr the_module in
+          let initStructField (f_name, f_expr) = 
+            let f_idx = get_field_idx s_name f_name in
+            let i' = L.const_int i32_t f_idx in
+            let e' = build_expr builder f_expr in
+            let ptr_gep = L.build_gep s_global [|L.const_int i32_t 0; i'|] s_name builder in
+            ignore(llstore e' ptr_gep builder);
+          in
+            (* ignore(print_endline "begin init all fields"); *)
+            ignore(List.map initStructField field_init_list);
+            (* ignore(print_endline "end init all fields"); *)
+            (* s_ptr *)
+            s_global *)
+          (* let initStructField (_, f_expr) = 
+                build_expr builder f_expr
+          in
+          L.const_named_struct (ltype_of_typ (A.StructT(s_name))) (Array.of_list (List.map initStructField field_init_list)) *)
         | SDupleCreate (i1, i2) ->
           let int1 = build_expr builder i1 in
           let int2 = build_expr builder i2 in

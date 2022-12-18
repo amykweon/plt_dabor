@@ -1,0 +1,10 @@
+struct Piece {loc: duple};
+struct Piece pi;
+duple target;
+duple target2;
+target = (10, 4);
+
+pi = Piece {loc: target};
+target2 = pi.loc;
+print_duple target2;
+
