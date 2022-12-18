@@ -1,0 +1,9 @@
+struct Piece {num1: int, num2: int};
+struct Piece pi;
+int x;
+
+x = 2;
+
+pi = Piece {num1: 10, num2: 2};
+print_int pi.num1;
+print_int pi.num2;
