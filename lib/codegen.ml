@@ -265,7 +265,6 @@ let rec ltype_of_typ = (function
                 (* ignore(L.build_store e' ptr_gep builder); e' *)
           in add
         (*
-        | SStructCreate (s, s_l) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
         | SMatrixCreate (int_list) ->
