@@ -7,3 +7,8 @@ y = horizontal(1);
 
 x = x move y;
 print_duple x;
+
+y = diagonalRight(1);
+x = (1, 1);
+x move y;
+print_duple x;

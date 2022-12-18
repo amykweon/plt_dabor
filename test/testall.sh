@@ -105,6 +105,8 @@ Check() {
 
     if [ $error -eq 0 ] ; then
 	if [ $keep -eq 0 ] ; then
+        cat ${basename}.out
+        cat ${reffile}.out
 	    rm -f $generatedfiles
 	fi
 	echo "OK"
@@ -181,7 +183,7 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-*.db tests/fail-*.db"
+    files="tests/test-duple_*.db"
 fi
 
 echo "files:"

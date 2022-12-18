@@ -120,5 +120,5 @@ expr_rule:
  | PRINTI expr_rule                    { PrintInt($2) }
  | PRINTS expr_rule                    { PrintStr($2) }
  | PRINTM id_rule                      { PrintMat($2) }
- | PRINTD id_rule                      { PrintDup($2) }
+ | PRINTD expr_rule                    { PrintDup($2) }
  | PRINTV expr_rule                    { PrintVec($2) }

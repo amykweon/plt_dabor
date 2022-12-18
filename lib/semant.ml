@@ -178,8 +178,8 @@ let check (program: program) =
           | _ -> raise (Failure ("Cannot print data type other than matrix"))
         in return
       | PrintDup (e) ->
-        let (id_ty, _) as s_id_typ = check_id_typ e in
-        if id_ty = Duple then (Duple, SPrintDup(s_id_typ))
+        let (r_ty, _) as s_expr = check_expr e in
+        if r_ty = Duple then (Duple, SPrintDup(s_expr))
         else raise (Failure ("Cannot print data type other than duple"))
       | PrintVec (e) ->
         let (r_ty, _) as s_expr = check_expr e in

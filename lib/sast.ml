@@ -24,7 +24,7 @@ and sx =
   | SPrintInt of sexpr
   | SPrintStr of sexpr
   | SPrintMat of sid_typ
-  | SPrintDup of sid_typ
+  | SPrintDup of sexpr
   | SPrintVec of sexpr
 
 type sstmt =
@@ -68,7 +68,7 @@ let rec string_of_sexpr (t, e) =
     | SPrintInt(e) -> "print integer: " ^ string_of_sexpr e
     | SPrintStr(e) -> "print string: " ^ string_of_sexpr e
     | SPrintMat(e) -> "print matrix: " ^ string_sid_typ e
-    | SPrintDup(e) -> "print duple: " ^ string_sid_typ e
+    | SPrintDup(e) -> "print duple: " ^ string_of_sexpr e
     | SPrintVec(e) -> "print vector: " ^ string_of_sexpr e
   )
   and struct_of_struct_se (id, e) = id ^ " : " ^ string_of_sexpr e ^ ";\n"

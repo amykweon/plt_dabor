@@ -123,7 +123,7 @@ let rec ltype_of_typ = (function
         | SBinop((t1, e_1), op, (t2, e_2)) ->
           let e1' = build_expr builder (t1, e_1)
           and e2' = build_expr builder (t2, e_2) in
-          if (t1 = t2 && t1 != A.Vector) then
+          if (t1 = t2 && (t1 = A.Int || t1 = A.String)) then
             (match op with
             	  A.Add     -> L.build_add
 	            | A.Sub     -> L.build_sub
@@ -197,6 +197,7 @@ let rec ltype_of_typ = (function
                   let diagR = L.build_global_stringptr "DiagR" "tmp" builder 
                   and diagL = L.build_global_stringptr "DiagL" "tmp" builder 
                   and hori = L.build_global_stringptr "Hori" "tmp" builder in
+                  (* and vert = L.build_global_stringptr "Vert" "tmp" builder in *)
                   let result_r =
                       if (dir_v = diagR) then L.build_add dr int_v "tmp" builder
                       else if (dir_v = diagL) then L.build_add dr int_v "tmp" builder
@@ -241,15 +242,12 @@ let rec ltype_of_typ = (function
               in L.build_call printf_func (Array.append [|(L.build_global_stringptr print_str "fmt" builder) |] print_array) "printf" builder
           | _ -> raise (Failure "print_matrix only supports matrix type")
           in print_inst
-        | SPrintDup (id) -> let print_inst = match id with
-           A.Duple, SId id' ->
-              let dr_gep = L.build_in_bounds_gep (lookup id') [|L.const_int i32_t 0|] "" builder in
-              let dr = L.build_load dr_gep "" builder in
-              let dc_gep = L.build_in_bounds_gep (lookup id') [|L.const_int i32_t 1|] "" builder in
-              let dc = L.build_load dc_gep "" builder in
-              L.build_call printf_func [| duple_format_str ; dr ; dc|] "printf" builder
-          | _ -> raise (Failure "print_duple only supports simple id argument")
-          in print_inst
+        | SPrintDup (id) -> 
+            let dr_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 0|] "" builder in
+            let dr = L.build_load dr_gep "" builder in
+            let dc_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 1|] "" builder in
+            let dc = L.build_load dc_gep "" builder in
+            L.build_call printf_func [| duple_format_str ; dr ; dc|] "printf" builder
         | SPrintVec (id) -> 
               let int_gep = L.build_struct_gep (build_expr builder id) 1 "" builder in 
               let int_v = L.build_load int_gep "" builder in
