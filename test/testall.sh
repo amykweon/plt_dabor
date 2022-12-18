@@ -182,7 +182,7 @@ then
     files=$@
 else
     # files="tests/test-*.db tests/fail-*.db"
-    files="tests/test-struct1.db"
+    files="tests/test-duple_index.db"
 fi
 
 echo "files:"

@@ -18,11 +18,6 @@ let translate (struct_field_info, globals, stmts) =
   and void_t = L.void_type context
   in
 
-  (* Main function definition*)
-  let main_type = L.function_type i32_t (Array.of_list []) in
-  let the_main = L.define_function "main" main_type the_module in
-  let builder = L.builder_at_end context (L.entry_block the_main) in
-
   let structPtrTyps = Hashtbl.create 10 in
 
   (* let get_field_idx s_name f_name = 
@@ -65,36 +60,24 @@ let rec ltype_of_typ = (function
                   ); *)
                   Hashtbl.add structPtrTyps s_name s_ptr_type; (* Hashtable is mutable *)
                   L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; 
-                  L.pointer_type s_ptr_type (* Note pointer to struct here *)
+                  s_ptr_type
+                  (* L.pointer_type s_ptr_type Note pointer to struct here *)
         )
     | _ -> void_t
   in
 
-  let llstore lval laddr builder =
-    let ptr = L.build_pointercast laddr (L.pointer_type (L.type_of lval)) "" builder in
-    let store_inst = (L.build_store lval ptr builder) in
-    ignore ((L.string_of_llvalue store_inst));
-    ()
-  in
-  
   (* Create a map of global variables after creating each *)
   let global_vars : L.llvalue StringMap.t =
   (* add struct definition *)
     let global_var m decls =
         match decls with 
           A.Bind (t, n) -> (
-            match t with 
-            A.StructT(s_name) -> 
-              let s_ptr_ty = ltype_of_typ t in
-              let s_ty = L.element_type s_ptr_ty in
-              let s_ptr = L.build_alloca s_ptr_ty s_name builder in
-              let s_val = L.build_malloc s_ty s_name builder in
-              ignore (llstore s_val s_ptr builder); 
-              StringMap.add n s_ptr m
-            | _ ->
               let init = match t with 
                 A.String -> L.const_pointer_null (ltype_of_typ t)
               | A.Duple -> L.const_pointer_null (L.pointer_type i32_t)
+              | A.StructT(s_name) -> 
+                let s_fields = StringMap.find s_name struct_field_info  in
+                L.const_named_struct (ltype_of_typ t) (Array.of_list (List.map (fun f -> L.const_pointer_null (ltype_of_typ (snd f))) s_fields))
               | A.Matrix(r, c) -> L.const_array (array_t i32_t c) (Array.make r (L.const_int i32_t 0))
               | _ -> L.const_int (ltype_of_typ t) 0
               in
@@ -114,9 +97,19 @@ let rec ltype_of_typ = (function
     L.declare_function "printf" printf_t the_module
   in
 
+  let llstore lval laddr builder =
+    let ptr = L.build_pointercast laddr (L.pointer_type (L.type_of lval)) "" builder in
+    let store_inst = (L.build_store lval ptr builder) in
+    ignore ((L.string_of_llvalue store_inst));
+    ()
+  in
+
   (* fill in the stmts *)
   let build_main_body stmts =
-    (* moved builder definition above *)
+    (* Main function definition*)
+    let main_type = L.function_type i32_t (Array.of_list []) in
+    let the_main = L.define_function "main" main_type the_module in
+    let builder = L.builder_at_end context (L.entry_block the_main) in
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
     and string_format_str =  L.build_global_stringptr "%s\n" "fmt" builder
     in
@@ -208,7 +201,8 @@ let rec ltype_of_typ = (function
                 let (_, construct) = e in
                 match construct with
                 SStructCreate(_, _) -> 
-                  ignore(L.build_store id_add id_add builder);
+                  (* ignore(L.build_store id_add id_add builder); *)
+                  ignore(llstore id_add id_add builder);
                   id_add 
                 | _ -> 
                   let e' = build_expr builder e in
