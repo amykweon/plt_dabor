@@ -173,9 +173,18 @@ let check (program: program) =
         else raise (Failure ("Cannot print data type other than string"))
       | PrintMat (e) ->
         let (id_ty, _) as s_id_typ = check_id_typ e in
-        match id_ty with
-          Matrix(r, c) -> (Matrix(r, c), SPrintMat(s_id_typ))
-        | _ -> raise (Failure ("Cannot print data type other than matrix"))
+          let return = match id_ty with
+            Matrix (r, c) -> (Matrix(r, c), SPrintMat(s_id_typ))
+          | _ -> raise (Failure ("Cannot print data type other than matrix"))
+        in return
+      | PrintDup (e) ->
+        let (id_ty, _) as s_id_typ = check_id_typ e in
+        if id_ty = Duple then (Duple, SPrintDup(s_id_typ))
+        else raise (Failure ("Cannot print data type other than duple"))
+      | PrintVec (e) ->
+        let (r_ty, _) as s_expr = check_expr e in
+        if r_ty = Vector then (Vector, SPrintVec(s_expr))
+        else raise (Failure ("Cannot print data type other than vector"))
       in
 
     let check_bool_expr e =

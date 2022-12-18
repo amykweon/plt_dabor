@@ -1,0 +1,10 @@
+vector x;
+
+x = horizontal (1);
+print_vector x;
+x = vertical (1);
+print_vector x;
+x = diagonalLeft (1);
+print_vector x;
+x = diagonalRight (1);
+print_vector x;

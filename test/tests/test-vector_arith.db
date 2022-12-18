@@ -1,0 +1,12 @@
+vector x;
+int y;
+
+y = 2;
+x = horizontal (1);
+print_vector x;
+
+x * y;
+print_vector x;
+
+x = x * y;
+print_vector x;

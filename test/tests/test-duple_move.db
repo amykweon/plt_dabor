@@ -1,0 +1,9 @@
+duple x;
+vector y;
+int z;
+
+x = (1, 1);
+y = horizontal(1);
+
+x = x move y;
+print_duple x;

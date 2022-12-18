@@ -1,0 +1,9 @@
+string x;
+string y;
+
+x = "hello";
+y = "hello";
+
+if (x == y) {
+	print_int 1;
+}
