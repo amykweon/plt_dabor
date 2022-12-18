@@ -1,2 +1,8 @@
 struct Piece {num: int};
 struct Piece pi;
+int x;
+
+x = 7;
+pi = Piece {num: 10};
+pi.num = x;
+print_int pi.num;
