@@ -118,9 +118,10 @@ let rec ltype_of_typ = (function
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
-        | SBinop((A.Int, _) as e1, op, e2) ->
-            let e1' = build_expr builder e1
-            and e2' = build_expr builder e2 in
+        | SBinop((t1, e_1), op, (t2, e_2)) ->
+          let e1' = build_expr builder (t1, e_1)
+          and e2' = build_expr builder (t2, e_2) in
+          if (t1 = t2 && t1 != A.Vector) then
             (match op with
             	  A.Add     -> L.build_add
 	            | A.Sub     -> L.build_sub
@@ -136,8 +137,33 @@ let rec ltype_of_typ = (function
 	            | A.EqGreater     -> L.build_icmp L.Icmp.Sge
               | A.Not     -> raise (Failure "NOT is a unary operator")
               | A.Neg     -> raise (Failure "NEG is a unary operator")
-              | A.Move    -> raise (Failure "Not implemented")
-            ) e1' e2' "tmp" builder
+              | _         -> raise (Failure ("illegal binary operator"))
+          ) e1' e2' "tmp" builder
+          else if ((t1 = A.Vector && t2 = A.Int)) then
+            let compute = match op with
+	              A.Multi   -> raise (Failure ("vector operation not implemented"))
+              | A.Mod     -> raise (Failure ("vector operation not implemented"))
+              | _         -> raise (Failure ("illegal binary operator"))
+            in compute
+          else if ((t2 = A.Vector && t1 = A.Int)) then
+            let compute = match op with
+	              A.Multi   -> raise (Failure ("vector operation not implemented"))
+              | A.Mod     -> raise (Failure ("vector operation not implemented"))
+              | _         -> raise (Failure ("illegal binary operator"))
+            in compute
+          else if ((t1 = t2 ) && (t1 = A.Vector)) then
+            let compute = match op with
+            	  A.Add     -> raise (Failure ("vector operation not implemented"))
+	            | A.Sub     -> raise (Failure ("vector operation not implemented"))
+              | _         -> raise (Failure ("illegal binary operator"))
+            in compute
+          else if ((t1 = A.Vector && t2 = A.Duple)) then
+            let compute = raise (Failure ("move operation not implement"))
+            in compute
+          else if ((t1 = A.Duple && t2 = A.Vector)) then
+            let compute = raise (Failure ("move operation not implement"))
+            in compute
+          else raise (Failure ("illegal binary operation"))
         | SUnop(op, e) ->
             let e' = build_expr builder e in
             (match op with
@@ -199,7 +225,6 @@ let rec ltype_of_typ = (function
           in add
         (*
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
-        | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
         | SVectorCreate (dir, e) ->
           let e' = build_expr builder e in
