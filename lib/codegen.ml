@@ -181,7 +181,7 @@ let rec ltype_of_typ = (function
         | SBinop((t1, e_1), op, (t2, e_2)) ->
           let e1' = build_expr builder (t1, e_1)
           and e2' = build_expr builder (t2, e_2) in
-          if (t1 = t2 && (t1 = A.Int || t1 = A.String)) then
+          if (t1 = t2 && (t1 = A.Int || t1 = A.String || t1 = A.Bool)) then
             (match op with
             	  A.Add     -> L.build_add
 	            | A.Sub     -> L.build_sub
