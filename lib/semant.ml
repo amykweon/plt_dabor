@@ -91,8 +91,9 @@ let check (program: program) =
       | BoolLit l -> (Bool, SBoolLit l)
       | StringLit l -> (String, SStringLit l)
       | IdRule i -> let (typ, sx) = check_id_typ i in (typ, SIdRule(typ, sx))
-      | VectorCreate(dir, num) -> let (type_n, _) as snum = check_expr num in 
-          if (type_n = Int) then (Vector, SVectorCreate(dir, snum)) else raise (Failure ("vector magnitude only accepts integer type"))
+      | VectorCreate(e1, e2) -> let (type_i, _) as i = check_expr e1 in let (type_j, _) as j = check_expr e2 in
+        if (type_i = Int && type_j = Int) then (Vector, SVectorCreate(i, j))
+        else raise (Failure ("vector only takes in integer elements"))
       | DupleCreate(e1, e2) -> let (type_i, _) as i = check_expr e1 in let (type_j, _) as j = check_expr e2 in
         if (type_i = Int && type_j = Int) then (Duple, SDupleCreate(i, j))
         else raise (Failure ("duple only takes in integer elements"))

@@ -13,7 +13,6 @@ let translate (struct_field_info, globals, stmts) =
   and i8_t   = L.i8_type context
   and i1_t   = L.i1_type context
   and string_t = (L.pointer_type (L.i8_type context))
-  and vector_t = L.struct_type context [| (L.pointer_type (L.i8_type context)); (L.i32_type context) |]
   and array_t = L.array_type
   in
 
@@ -37,7 +36,7 @@ let translate (struct_field_info, globals, stmts) =
     | A.String -> string_t
     | A.Duple -> array_t i32_t 2
     | A.Matrix(r,c) -> array_t (array_t i32_t c) r
-    | A.Vector -> vector_t
+    | A.Vector -> array_t i32_t 2
     | A.StructT(s_name) -> 
       let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
         ( match s_ptr_type with 
@@ -79,7 +78,7 @@ let translate (struct_field_info, globals, stmts) =
             A.String -> L.const_pointer_null (ltype_of_typ t)
           | A.Duple -> L.const_pointer_null (L.pointer_type i32_t)
           | A.Matrix(r, c) -> L.const_array (array_t i32_t c) (Array.make r (L.const_int i32_t 0))
-          | A.Vector -> L.const_pointer_null (L.pointer_type (ltype_of_typ t))
+          | A.Vector -> L.const_pointer_null (L.pointer_type i32_t)
           | A.StructT(s_name) -> 
               Hashtbl.add structNames n s_name;
               let s_fields = StringMap.find s_name struct_field_info  in
@@ -134,7 +133,7 @@ let rec ltype_of_typ = (function
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
     and string_format_str =  L.build_global_stringptr "%s\n" "fmt" builder
     and duple_format_str = L.build_global_stringptr "(%d, %d)\n" "fmt" builder
-    and vector_format_str = L.build_global_stringptr "%s (%d)\n" "fmt" builder
+    and vector_format_str = L.build_global_stringptr "<%d, %d>\n" "fmt" builder
     in
 
     let lookup n = StringMap.find n global_vars in
@@ -201,40 +200,120 @@ let rec ltype_of_typ = (function
           ) e1' e2' "tmp" builder
           else if ((t1 = A.Vector && t2 = A.Int)) then
             let compute = match op with
-	              A.Multi   ->
-                  let ptr_gep = L.build_struct_gep e1' 1 "" builder in
-                  let int_r =
-                    let i_load = L.build_load ptr_gep "" builder in
-                    L.build_mul i_load e2' "tmp" builder in
-                  ignore(L.build_store int_r ptr_gep builder); e1'
+                A.Multi   ->
+                  let vr_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 0|] "" builder in
+                  let vr = L.build_load vr_gep "" builder in
+                  let vc_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 1|] "" builder in
+                  let vc = L.build_load vc_gep "" builder in
+
+                  let result_r = L.build_mul vr e2' "tmp" builder in
+                  let result_c = L.build_mul vc e2' "tmp" builder in
+                  
+                  let vector_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+                  ignore ( 
+                    let indx = L.const_int i32_t 0 in
+                    let eptr = L.build_gep vector_ptr [|indx|] "" builder in llstore result_r eptr builder;
+                    let indy = L.const_int i32_t 1 in
+                    let eptr = L.build_gep vector_ptr [|indy|] "" builder in llstore result_c eptr builder;
+                  ); (vector_ptr)
               | A.Mod     -> 
-                  let ptr_gep = L.build_struct_gep e1' 1 "" builder in
-                  let int_r =
-                    let i_load = L.build_load ptr_gep "" builder in
-                    L.build_sdiv i_load e2' "tmp" builder in
-                  ignore(L.build_store int_r ptr_gep builder); e1'
+                let vr_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 0|] "" builder in
+                let vr = L.build_load vr_gep "" builder in
+                let vc_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 1|] "" builder in
+                let vc = L.build_load vc_gep "" builder in
+
+                let result_r = L.build_sdiv vr e2' "tmp" builder in
+                let result_c = L.build_sdiv vc e2' "tmp" builder in
+
+                let vector_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+                ignore ( 
+                  let indx = L.const_int i32_t 0 in
+                  let eptr = L.build_gep vector_ptr [|indx|] "" builder in llstore result_r eptr builder;
+                  let indy = L.const_int i32_t 1 in
+                  let eptr = L.build_gep vector_ptr [|indy|] "" builder in llstore result_c eptr builder;
+                ); (vector_ptr)
               | _         -> raise (Failure ("illegal binary operator"))
             in compute
-          else if ((t2 = A.Vector && t1 = A.Int)) then
+          else if (t1 = A.Int && t2 = A.Vector) then
             let compute = match op with
                 A.Multi   ->
-                  let ptr_gep = L.build_struct_gep e2' 1 "" builder in
-                  let int_r =
-                    let i_load = L.build_load ptr_gep "" builder in
-                    L.build_mul i_load e1' "tmp" builder in
-                  ignore(L.build_store int_r ptr_gep builder); e2'
+                  let vr_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 0|] "" builder in
+                  let vr = L.build_load vr_gep "" builder in
+                  let vc_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 1|] "" builder in
+                  let vc = L.build_load vc_gep "" builder in
+
+                  let result_r = L.build_mul vr e1' "tmp" builder in
+                  let result_c = L.build_mul vc e1' "tmp" builder in
+                  
+                  let vector_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+                  ignore ( 
+                    let indx = L.const_int i32_t 0 in
+                    let eptr = L.build_gep vector_ptr [|indx|] "" builder in llstore result_r eptr builder;
+                    let indy = L.const_int i32_t 1 in
+                    let eptr = L.build_gep vector_ptr [|indy|] "" builder in llstore result_c eptr builder;
+                  ); (vector_ptr)
               | A.Mod     -> 
-                  let ptr_gep = L.build_struct_gep e2' 1 "" builder in
-                  let int_r =
-                    let i_load = L.build_load ptr_gep "" builder in
-                    L.build_sdiv i_load e1' "tmp" builder in
-                  ignore(L.build_store int_r ptr_gep builder); e2'
+                let vr_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 0|] "" builder in
+                let vr = L.build_load vr_gep "" builder in
+                let vc_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 1|] "" builder in
+                let vc = L.build_load vc_gep "" builder in
+
+                let result_r = L.build_sdiv vr e1' "tmp" builder in
+                let result_c = L.build_sdiv vc e1' "tmp" builder in
+
+                let vector_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+                ignore ( 
+                  let indx = L.const_int i32_t 0 in
+                  let eptr = L.build_gep vector_ptr [|indx|] "" builder in llstore result_r eptr builder;
+                  let indy = L.const_int i32_t 1 in
+                  let eptr = L.build_gep vector_ptr [|indy|] "" builder in llstore result_c eptr builder;
+                ); (vector_ptr)
               | _         -> raise (Failure ("illegal binary operator"))
             in compute
-          else if ((t1 = t2 ) && (t1 = A.Vector)) then
+          else if (( t1 = t2 ) && (t1 = A.Vector)) then
             let compute = match op with
-            	  A.Add     -> raise (Failure ("vector operation not implemented"))
-	            | A.Sub     -> raise (Failure ("vector operation not implemented"))
+            	  A.Add     -> 
+                  let vr1_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 0|] "" builder in
+                  let vr1 = L.build_load vr1_gep "" builder in
+                  let vc1_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 1|] "" builder in
+                  let vc1 = L.build_load vc1_gep "" builder in
+
+                  let vr2_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 0|] "" builder in
+                  let vr2 = L.build_load vr2_gep "" builder in
+                  let vc2_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 1|] "" builder in
+                  let vc2 = L.build_load vc2_gep "" builder in
+
+                  let result_r = L.build_add vr1 vr2 "tmp" builder in
+                  let result_c = L.build_add vc1 vc2 "tmp" builder in
+
+                  let vector_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+                  ignore ( 
+                    let indx = L.const_int i32_t 0 in
+                    let eptr = L.build_gep vector_ptr [|indx|] "" builder in llstore result_r eptr builder;
+                    let indy = L.const_int i32_t 1 in
+                    let eptr = L.build_gep vector_ptr [|indy|] "" builder in llstore result_c eptr builder;
+                  ); (vector_ptr)
+	            | A.Sub     -> 
+                let vr1_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 0|] "" builder in
+                  let vr1 = L.build_load vr1_gep "" builder in
+                  let vc1_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 1|] "" builder in
+                  let vc1 = L.build_load vc1_gep "" builder in
+
+                  let vr2_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 0|] "" builder in
+                  let vr2 = L.build_load vr2_gep "" builder in
+                  let vc2_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 1|] "" builder in
+                  let vc2 = L.build_load vc2_gep "" builder in
+
+                  let result_r = L.build_sub vr1 vr2 "tmp" builder in
+                  let result_c = L.build_sub vc1 vc2 "tmp" builder in
+
+                  let vector_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+                  ignore ( 
+                    let indx = L.const_int i32_t 0 in
+                    let eptr = L.build_gep vector_ptr [|indx|] "" builder in llstore result_r eptr builder;
+                    let indy = L.const_int i32_t 1 in
+                    let eptr = L.build_gep vector_ptr [|indy|] "" builder in llstore result_c eptr builder;
+                  ); (vector_ptr)
               | _         -> raise (Failure ("illegal binary operator"))
             in compute
           else if ((t1 = A.Duple && t2 = A.Vector)) then
@@ -245,30 +324,21 @@ let rec ltype_of_typ = (function
                   let dc_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 1|] "" builder in
                   let dc = L.build_load dc_gep "" builder in
 
-                  let int_v =
-                    let int_gep = L.build_struct_gep e2' 1 "" builder in 
-                    L.build_load int_gep "" builder in
-                  let dir_v = 
-                    let dir_gep = L.build_struct_gep e2' 0 "" builder in 
-                    L.build_load dir_gep "" builder in
+                  let vr_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 0|] "" builder in
+                  let vr = L.build_load vr_gep "" builder in
+                  let vc_gep = L.build_in_bounds_gep e2' [|L.const_int i32_t 1|] "" builder in
+                  let vc = L.build_load vc_gep "" builder in
                   
-                  let diagR = L.build_global_stringptr "DiagR" "tmp" builder 
-                  and diagL = L.build_global_stringptr "DiagL" "tmp" builder 
-                  and hori = L.build_global_stringptr "Hori" "tmp" builder in
-                  (* and vert = L.build_global_stringptr "Vert" "tmp" builder in *)
-                  let result_r =
-                      if (dir_v = diagR) then L.build_add dr int_v "tmp" builder
-                      else if (dir_v = diagL) then L.build_add dr int_v "tmp" builder
-                      else if (dir_v = hori) then L.build_add dr (L.const_int i32_t 0) "tmp" builder
-                      else L.build_add dr int_v "tmp" builder
-                    in
-                    let result_c =
-                      if (dir_v = diagR) then L.build_add dc int_v "tmp" builder
-                      else if (dir_v = diagL) then L.build_sub dc int_v "tmp" builder
-                      else if (dir_v = hori) then L.build_add dc int_v "tmp" builder
-                      else L.build_add dc (L.const_int i32_t 0) "tmp" builder
-                    in ignore(L.build_store result_c dc_gep builder);
-                  ignore(L.build_store result_r dr_gep builder); e1'
+                  let result_r = L.build_add dr vr "tmp" builder in
+                  let result_c = L.build_add dc vc "tmp" builder in
+                  
+                  let duple_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+                  ignore ( 
+                    let indx = L.const_int i32_t 0 in
+                    let eptr = L.build_gep duple_ptr [|indx|] "" builder in llstore result_r eptr builder;
+                    let indy = L.const_int i32_t 1 in
+                    let eptr = L.build_gep duple_ptr [|indy|] "" builder in llstore result_c eptr builder;
+                  ); (duple_ptr)
               | _         -> raise (Failure ("illegal binary operator"))
             in compute
           else raise (Failure ("illegal binary operation"))
@@ -307,11 +377,11 @@ let rec ltype_of_typ = (function
             let dc = L.build_load dc_gep "" builder in
             L.build_call printf_func [| duple_format_str ; dr ; dc|] "printf" builder
         | SPrintVec (id) -> 
-              let int_gep = L.build_struct_gep (build_expr builder id) 1 "" builder in 
-              let int_v = L.build_load int_gep "" builder in
-              let dir_gep = L.build_struct_gep (build_expr builder id) 0 "" builder in 
-              let dir_v = L.build_load dir_gep "" builder in
-              L.build_call printf_func [| vector_format_str ; dir_v ; int_v |] "printf" builder
+          let vr_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 0|] "" builder in
+          let vr = L.build_load vr_gep "" builder in
+          let vc_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 1|] "" builder in
+          let vc = L.build_load vc_gep "" builder in
+          L.build_call printf_func [| vector_format_str ; vr ; vc|] "printf" builder
         | SAssign ((_, i), e) ->
           let add = match i with
               SId s -> let id_add = (lookup s) in
@@ -355,18 +425,16 @@ let rec ltype_of_typ = (function
         (*
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
-        | SVectorCreate (dir, e) ->
-          let e' = build_expr builder e in
-          let vector' = L.build_alloca vector_t "" builder in
-          let dir' = match dir with
-              A.Hori -> L.build_global_stringptr "Hori" "tmp" builder
-            | A.Vert -> L.build_global_stringptr "Vert" "tmp" builder
-            | A.DiagL -> L.build_global_stringptr "DiagL" "tmp" builder
-            | A.DiagR -> L.build_global_stringptr "DiagR" "tmp" builder
-          in ignore (
-            let eptr = L.build_struct_gep vector' 0 "" builder in llstore dir' eptr builder;
-            let eptr = L.build_struct_gep vector' 1 "" builder in llstore e' eptr builder;
-          ); vector'
+        | SVectorCreate (i1, i2) ->
+          let int1 = build_expr builder i1 in
+          let int2 = build_expr builder i2 in
+          let vector_ptr = L.build_array_malloc i32_t (L.const_int i32_t 1) "" builder in
+          ignore ( 
+            let indx = L.const_int i32_t 0 in
+            let eptr = L.build_gep vector_ptr [|indx|] "" builder in llstore int1 eptr builder;
+            let indy = L.const_int i32_t 1 in
+            let eptr = L.build_gep vector_ptr [|indy|] "" builder in llstore int2 eptr builder;
+          ); (vector_ptr)
         | SMatrixCreate (int_list) ->
           let lists       = List.map (List.map (L.const_int i32_t)) int_list in
           let innerArray   = List.map Array.of_list lists in

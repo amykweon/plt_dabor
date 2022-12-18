@@ -14,7 +14,7 @@ and sx =
   | SBoolLit of bool
   | SStringLit of string
   | SIdRule of sid_typ
-  | SVectorCreate of dir * sexpr
+  | SVectorCreate of sexpr * sexpr
   | SBinop of sexpr * op * sexpr
   | SUnop of op * sexpr
   | SAssign of sid_typ * sexpr
@@ -61,7 +61,7 @@ let rec string_of_sexpr (t, e) =
       string_of_sexpr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_sexpr e2
     | SUnop(o, e) -> string_of_sexpr e ^ " " ^ string_of_op o
     | SAssign(v, e) -> string_sid_typ v ^ " = " ^ string_of_sexpr e
-    | SVectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_sexpr num
+    | SVectorCreate(x, y) -> "<" ^ string_of_sexpr x ^ ", " ^ string_of_sexpr y ^ ">"
     | SMatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
     | SStructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_se l) ^ "}"
     | SDupleCreate(x, y) -> "(" ^ string_of_sexpr x ^ ", " ^ string_of_sexpr y ^ ")"
