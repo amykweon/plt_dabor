@@ -1,0 +1,7 @@
+string y;
+vector x;
+
+x = <1, 1>;
+y = "string";
+
+x * y;

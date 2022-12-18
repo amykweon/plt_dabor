@@ -1,0 +1,7 @@
+matrix[2][2] x;
+bool y;
+
+x = matrix_create([[1, 2], [3, 4]]);
+y = true;
+
+x[y];

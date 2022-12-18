@@ -16,4 +16,3 @@ y = 1;
 pi.num = y;
 
 print_int pi.num;
-

@@ -1,0 +1,5 @@
+struct Piece {num: int, loc: duple};
+struct Piece pi;
+
+pi.num = 20;
+pi.loc = 14;
