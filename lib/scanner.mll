@@ -15,10 +15,6 @@ rule token = parse
  [' ' '\t' '\r' '\n'] { token lexbuf }
 | "//" { comment lexbuf}
 | "vector" { VECTOR }
-| "diagonalLeft" { DIAGLEFT }
-| "diagonalRight" { DIAGRIGHT }
-| "horizontal" { HORIZONTAL }
-| "vertical" { VERTICAL }
 | "matrix" { MATRIX }
 | "matrix_create" { MATRIX_C }
 | "move" { MOVE }

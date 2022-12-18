@@ -3,7 +3,7 @@
 %token PLUS MINUS MULTIPLY MOD ASSIGN PRINTI PRINTS PRINTM PRINTD PRINTV
 %token EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE WHILE CONTINUE BREAK BOOL INT STRING DUPLE STRUCT
-%token VECTOR DIAGLEFT DIAGRIGHT HORIZONTAL VERTICAL MATRIX MATRIX_C MOVE TUPLE
+%token VECTOR MATRIX MATRIX_C MOVE TUPLE
 %token <int> INT_LITERAL 
 %token <bool> BLIT 
 %token <string> ID 
@@ -109,12 +109,9 @@ expr_rule:
  | expr_rule MOVE expr_rule              { Binop ($1, Move, $3) }
  | MINUS expr_rule                       { Unop (Neg, $2) }
  | NOT expr_rule                         { Unop (Not, $2) }
- | DIAGLEFT LPAREN expr_rule RPAREN    { VectorCreate(DiagL, $3) }
- | DIAGRIGHT LPAREN expr_rule RPAREN   { VectorCreate(DiagR, $3) }
- | HORIZONTAL LPAREN expr_rule RPAREN  { VectorCreate(Hori, $3) }
- | VERTICAL LPAREN expr_rule RPAREN    { VectorCreate(Vert, $3) }
+ | LT expr_rule COMMA expr_rule GT       { VectorCreate($2, $4) }
  | LPAREN expr_rule RPAREN               { $2 }
- | ID LBRACE struct_list RBRACE             { StructCreate($1, $3) }
+ | ID LBRACE struct_list RBRACE          { StructCreate($1, $3) }
  | MATRIX_C LPAREN matrix_rule RPAREN    { MatrixCreate($3) }
  | LPAREN expr_rule COMMA expr_rule RPAREN    { DupleCreate($2, $4) }
  | PRINTI expr_rule                    { PrintInt($2) }

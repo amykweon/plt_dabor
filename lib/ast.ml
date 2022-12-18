@@ -2,8 +2,6 @@
 
 type op = Add | Sub | Mod | Multi | Equal | Neq | Less | EqLess | Greater | EqGreater | And | Or | Move | Not | Neg
 
-type dir = DiagL | DiagR | Hori | Vert
-
 type typ = Int | Bool | String | Vector | Matrix of int * int | StructT of string | Duple
 
 type id_typ = 
@@ -18,7 +16,7 @@ type expr =
   | BoolLit of bool
   | StringLit of string
   | IdRule of id_typ 
-  | VectorCreate of dir * expr
+  | VectorCreate of expr * expr
   | Binop of expr * op * expr
   | Unop of op * expr
   | Assign of id_typ * expr
@@ -66,12 +64,6 @@ let string_of_op = function
   | Neg -> "!"
   | Move -> "move" 
 
-let string_of_dir = function
-    DiagL -> "diagl"
-  | DiagR -> "diagr"
-  | Hori -> "hori"
-  | Vert -> "vert"
-
 let string_of_matrix (i) = string_of_int i ^ " "
 let string_of_matrix_l (l) = "[ " ^ String.concat "" (List.map string_of_matrix l) ^ "]\n"
 
@@ -93,7 +85,7 @@ let rec string_of_expr = function
     string_of_expr e1 ^ " " ^ string_of_op o ^ " " ^ string_of_expr e2
   | Unop(o, e) ->  string_of_op o ^ " " ^ string_of_expr e
   | Assign(v, e) -> string_id_typ v ^ " = " ^ string_of_expr e
-  | VectorCreate(dir, num) -> string_of_dir dir ^ " " ^ string_of_expr num
+  | VectorCreate(x, y) -> "<" ^ string_of_expr x ^ ", " ^ string_of_expr y ^ ">"
   | MatrixCreate(l) -> "[" ^ String.concat "" (List.map string_of_matrix_l l) ^ "]"
   | StructCreate(id, l) -> id ^ " {" ^ String.concat "" (List.map struct_of_struct_e l) ^ "}"
   | DupleCreate(x, y) -> "(" ^ string_of_expr x ^ ", " ^ string_of_expr y ^ ")"
