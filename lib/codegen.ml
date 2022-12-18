@@ -15,7 +15,6 @@ let translate (struct_field_info, globals, stmts) =
   and string_t = (L.pointer_type (L.i8_type context))
   and vector_t = L.struct_type context [| (L.pointer_type (L.i8_type context)); (L.i32_type context) |]
   and array_t = L.array_type
-  and void_t = L.void_type context
   in
 
   let structPtrTyps = Hashtbl.create 10 in (* No longer really pointer types *)
@@ -48,7 +47,6 @@ let translate (struct_field_info, globals, stmts) =
                   L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; 
                   s_ptr_type
         )
-    | _ -> void_t
   in
 
 
@@ -389,7 +387,6 @@ let rec ltype_of_typ = (function
             let eptr = L.build_gep duple_ptr [|indy|] "" builder in llstore int2 eptr builder;
           ); (duple_ptr)
         | SIdRule id_t -> build_idrule builder id_t
-        | _ -> raise (Failure "TODO")
       in
           
     let add_terminal builder instr =
