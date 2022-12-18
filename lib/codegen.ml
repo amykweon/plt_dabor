@@ -5,7 +5,6 @@ module A = Ast
 open Sast
 
 module StringMap = Map.Make(String)
-
 let translate (struct_field_info, globals, stmts) = 
   let context = L.global_context () in
   let the_module = L.create_module context "dabor" in
@@ -14,6 +13,7 @@ let translate (struct_field_info, globals, stmts) =
   and i8_t   = L.i8_type context
   and i1_t   = L.i1_type context
   and string_t = (L.pointer_type (L.i8_type context))
+  and vector_t = L.struct_type context [| (L.pointer_type (L.i8_type context)); (L.i32_type context) |]
   and array_t = L.array_type
   and void_t = L.void_type context
   in
@@ -38,6 +38,7 @@ let translate (struct_field_info, globals, stmts) =
     | A.String -> string_t
     | A.Duple -> array_t i32_t 2
     | A.Matrix(r,c) -> array_t (array_t i32_t c) r
+    | A.Vector -> vector_t
     | A.StructT(s_name) -> 
       let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
         ( match s_ptr_type with 
@@ -80,6 +81,7 @@ let translate (struct_field_info, globals, stmts) =
             A.String -> L.const_pointer_null (ltype_of_typ t)
           | A.Duple -> L.const_pointer_null (L.pointer_type i32_t)
           | A.Matrix(r, c) -> L.const_array (array_t i32_t c) (Array.make r (L.const_int i32_t 0))
+          | A.Vector -> L.const_pointer_null (L.pointer_type (ltype_of_typ t))
           | A.StructT(s_name) -> 
               Hashtbl.add structNames n s_name;
               let s_fields = StringMap.find s_name struct_field_info  in
@@ -133,6 +135,8 @@ let rec ltype_of_typ = (function
 
     let int_format_str = L.build_global_stringptr "%d\n" "fmt" builder
     and string_format_str =  L.build_global_stringptr "%s\n" "fmt" builder
+    and duple_format_str = L.build_global_stringptr "(%d, %d)\n" "fmt" builder
+    and vector_format_str = L.build_global_stringptr "%s (%d)\n" "fmt" builder
     in
 
     let lookup n = StringMap.find n global_vars in
@@ -176,9 +180,10 @@ let rec ltype_of_typ = (function
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
-        | SBinop(e1, op, e2) ->
-            let e1' = build_expr builder e1
-            and e2' = build_expr builder e2 in
+        | SBinop((t1, e_1), op, (t2, e_2)) ->
+          let e1' = build_expr builder (t1, e_1)
+          and e2' = build_expr builder (t2, e_2) in
+          if (t1 = t2 && (t1 = A.Int || t1 = A.String)) then
             (match op with
             	  A.Add     -> L.build_add
 	            | A.Sub     -> L.build_sub
@@ -194,8 +199,81 @@ let rec ltype_of_typ = (function
 	            | A.EqGreater     -> L.build_icmp L.Icmp.Sge
               | A.Not     -> raise (Failure "NOT is a unary operator")
               | A.Neg     -> raise (Failure "NEG is a unary operator")
-              | A.Move    -> raise (Failure "Not implemented")
-            ) e1' e2' "tmp" builder
+              | _         -> raise (Failure ("illegal binary operator"))
+          ) e1' e2' "tmp" builder
+          else if ((t1 = A.Vector && t2 = A.Int)) then
+            let compute = match op with
+	              A.Multi   ->
+                  let ptr_gep = L.build_struct_gep e1' 1 "" builder in
+                  let int_r =
+                    let i_load = L.build_load ptr_gep "" builder in
+                    L.build_mul i_load e2' "tmp" builder in
+                  ignore(L.build_store int_r ptr_gep builder); e1'
+              | A.Mod     -> 
+                  let ptr_gep = L.build_struct_gep e1' 1 "" builder in
+                  let int_r =
+                    let i_load = L.build_load ptr_gep "" builder in
+                    L.build_sdiv i_load e2' "tmp" builder in
+                  ignore(L.build_store int_r ptr_gep builder); e1'
+              | _         -> raise (Failure ("illegal binary operator"))
+            in compute
+          else if ((t2 = A.Vector && t1 = A.Int)) then
+            let compute = match op with
+                A.Multi   ->
+                  let ptr_gep = L.build_struct_gep e2' 1 "" builder in
+                  let int_r =
+                    let i_load = L.build_load ptr_gep "" builder in
+                    L.build_mul i_load e1' "tmp" builder in
+                  ignore(L.build_store int_r ptr_gep builder); e2'
+              | A.Mod     -> 
+                  let ptr_gep = L.build_struct_gep e2' 1 "" builder in
+                  let int_r =
+                    let i_load = L.build_load ptr_gep "" builder in
+                    L.build_sdiv i_load e1' "tmp" builder in
+                  ignore(L.build_store int_r ptr_gep builder); e2'
+              | _         -> raise (Failure ("illegal binary operator"))
+            in compute
+          else if ((t1 = t2 ) && (t1 = A.Vector)) then
+            let compute = match op with
+            	  A.Add     -> raise (Failure ("vector operation not implemented"))
+	            | A.Sub     -> raise (Failure ("vector operation not implemented"))
+              | _         -> raise (Failure ("illegal binary operator"))
+            in compute
+          else if ((t1 = A.Duple && t2 = A.Vector)) then
+            let compute = match op with
+                A.Move   ->
+                  let dr_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 0|] "" builder in
+                  let dr = L.build_load dr_gep "" builder in
+                  let dc_gep = L.build_in_bounds_gep e1' [|L.const_int i32_t 1|] "" builder in
+                  let dc = L.build_load dc_gep "" builder in
+
+                  let int_v =
+                    let int_gep = L.build_struct_gep e2' 1 "" builder in 
+                    L.build_load int_gep "" builder in
+                  let dir_v = 
+                    let dir_gep = L.build_struct_gep e2' 0 "" builder in 
+                    L.build_load dir_gep "" builder in
+                  
+                  let diagR = L.build_global_stringptr "DiagR" "tmp" builder 
+                  and diagL = L.build_global_stringptr "DiagL" "tmp" builder 
+                  and hori = L.build_global_stringptr "Hori" "tmp" builder in
+                  (* and vert = L.build_global_stringptr "Vert" "tmp" builder in *)
+                  let result_r =
+                      if (dir_v = diagR) then L.build_add dr int_v "tmp" builder
+                      else if (dir_v = diagL) then L.build_add dr int_v "tmp" builder
+                      else if (dir_v = hori) then L.build_add dr (L.const_int i32_t 0) "tmp" builder
+                      else L.build_add dr int_v "tmp" builder
+                    in
+                    let result_c =
+                      if (dir_v = diagR) then L.build_add dc int_v "tmp" builder
+                      else if (dir_v = diagL) then L.build_sub dc int_v "tmp" builder
+                      else if (dir_v = hori) then L.build_add dc int_v "tmp" builder
+                      else L.build_add dc (L.const_int i32_t 0) "tmp" builder
+                    in ignore(L.build_store result_c dc_gep builder);
+                  ignore(L.build_store result_r dr_gep builder); e1'
+              | _         -> raise (Failure ("illegal binary operator"))
+            in compute
+          else raise (Failure ("illegal binary operation"))
         | SUnop(op, e) ->
             let e' = build_expr builder e in
             (match op with
@@ -224,6 +302,18 @@ let rec ltype_of_typ = (function
               in L.build_call printf_func (Array.append [|(L.build_global_stringptr print_str "fmt" builder) |] print_array) "printf" builder
           | _ -> raise (Failure "print_matrix only supports matrix type")
           in print_inst
+        | SPrintDup (id) -> 
+            let dr_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 0|] "" builder in
+            let dr = L.build_load dr_gep "" builder in
+            let dc_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 1|] "" builder in
+            let dc = L.build_load dc_gep "" builder in
+            L.build_call printf_func [| duple_format_str ; dr ; dc|] "printf" builder
+        | SPrintVec (id) -> 
+              let int_gep = L.build_struct_gep (build_expr builder id) 1 "" builder in 
+              let int_v = L.build_load int_gep "" builder in
+              let dir_gep = L.build_struct_gep (build_expr builder id) 0 "" builder in 
+              let dir_v = L.build_load dir_gep "" builder in
+              L.build_call printf_func [| vector_format_str ; dir_v ; int_v |] "printf" builder
         | SAssign ((_, i), e) ->
           let add = match i with
               SId s -> let id_add = (lookup s) in
@@ -267,6 +357,18 @@ let rec ltype_of_typ = (function
         (*
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
+        | SVectorCreate (dir, e) ->
+          let e' = build_expr builder e in
+          let vector' = L.build_alloca vector_t "" builder in
+          let dir' = match dir with
+              A.Hori -> L.build_global_stringptr "Hori" "tmp" builder
+            | A.Vert -> L.build_global_stringptr "Vert" "tmp" builder
+            | A.DiagL -> L.build_global_stringptr "DiagL" "tmp" builder
+            | A.DiagR -> L.build_global_stringptr "DiagR" "tmp" builder
+          in ignore (
+            let eptr = L.build_struct_gep vector' 0 "" builder in llstore dir' eptr builder;
+            let eptr = L.build_struct_gep vector' 1 "" builder in llstore e' eptr builder;
+          ); vector'
         | SMatrixCreate (int_list) ->
           let lists       = List.map (List.map (L.const_int i32_t)) int_list in
           let innerArray   = List.map Array.of_list lists in

@@ -1,6 +1,6 @@
 %{ open Ast %}
 %token DOT SEMI COLON COMMA LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK
-%token PLUS MINUS MULTIPLY MOD ASSIGN PRINTI PRINTS PRINTM
+%token PLUS MINUS MULTIPLY MOD ASSIGN PRINTI PRINTS PRINTM PRINTD PRINTV
 %token EQ NEQ LT LEQ GT GEQ AND OR NOT
 %token IF ELSE WHILE CONTINUE BREAK BOOL INT STRING DUPLE STRUCT
 %token VECTOR DIAGLEFT DIAGRIGHT HORIZONTAL VERTICAL MATRIX MATRIX_C MOVE TUPLE
@@ -120,3 +120,5 @@ expr_rule:
  | PRINTI expr_rule                    { PrintInt($2) }
  | PRINTS expr_rule                    { PrintStr($2) }
  | PRINTM id_rule                      { PrintMat($2) }
+ | PRINTD expr_rule                    { PrintDup($2) }
+ | PRINTV expr_rule                    { PrintVec($2) }

@@ -1,0 +1,4 @@
+duple x;
+
+x = (1, 1);
+print_duple x;

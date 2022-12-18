@@ -46,6 +46,8 @@ rule token = parse
 | "print_int" { PRINTI }
 | "print_string" { PRINTS }
 | "print_matrix" { PRINTM }
+| "print_duple" { PRINTD }
+| "print_vector" { PRINTV }
 
 | '.' { DOT }
 
