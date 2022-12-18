@@ -15,6 +15,7 @@ let translate (globals, stmts) =
     and i1_t   = L.i1_type context
     and string_t = (L.pointer_type (L.i8_type context))
     and array_t = L.array_type
+    and vector_t = L.struct_type context [| (L.pointer_type (L.i8_type context)); (L.i32_type context) |]
     and void_t = L.void_type context
     in
 
@@ -26,6 +27,7 @@ let translate (globals, stmts) =
     | A.String -> string_t
     | A.Duple -> array_t i32_t 2
     | A.Matrix(r,c) -> array_t (array_t i32_t c) r
+    | A.Vector -> vector_t
     | _ -> void_t
   in
   
@@ -39,6 +41,7 @@ let translate (globals, stmts) =
             A.String -> L.const_pointer_null (ltype_of_typ t)
           | A.Duple -> L.const_pointer_null (L.pointer_type i32_t)
           | A.Matrix(r, c) -> L.const_array (array_t i32_t c) (Array.make r (L.const_int i32_t 0))
+          | A.Vector -> L.const_struct context ([|L.const_pointer_null (L.pointer_type(L.i8_type context)) ; L.const_pointer_null (L.i32_type context)|])
           | _ -> L.const_int (ltype_of_typ t) 0
         in
           StringMap.add n (L.define_global n init the_module) m
@@ -115,7 +118,7 @@ let rec ltype_of_typ = (function
           SIntLit i  -> L.const_int i32_t i
         | SBoolLit b  -> L.const_int i1_t (if b then 1 else 0)
         | SStringLit s -> L.build_global_stringptr s "tmp" builder
-        | SBinop(e1, op, e2) ->
+        | SBinop((A.Int, _) as e1, op, e2) ->
             let e1' = build_expr builder e1
             and e2' = build_expr builder e2 in
             (match op with
@@ -198,6 +201,14 @@ let rec ltype_of_typ = (function
         | SStructCreate (s, s_l) -> raise (Failure "TODO")
         | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
+        | SVectorCreate (dir, e) ->
+          let e' = build_expr builder e in
+          let dir' = match dir with
+              A.Hori -> L.build_global_stringptr "Hori" "tmp" builder
+            | A.Vert -> L.build_global_stringptr "Vert" "tmp" builder
+            | A.DiagL -> L.build_global_stringptr "DiagL" "tmp" builder
+            | A.DiagR -> L.build_global_stringptr "DiagR" "tmp" builder
+          in L.const_struct context [|dir' ; e'|]
         | SMatrixCreate (int_list) ->
           let lists       = List.map (List.map (L.const_int i32_t)) int_list in
           let innerArray   = List.map Array.of_list lists in
