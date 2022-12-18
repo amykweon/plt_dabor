@@ -1,0 +1,19 @@
+struct Piece {num: int, loc: duple};
+struct Piece pi;
+duple t;
+int x;
+int y;
+
+pi.num = 20;
+pi.loc = (10, 4);
+t = pi.loc;
+x = pi.num;
+
+print_int t[0];
+print_int x;
+
+y = 1;
+pi.num = y;
+
+print_int pi.num;
+
