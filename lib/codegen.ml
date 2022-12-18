@@ -6,26 +6,36 @@ open Sast
 
 module StringMap = Map.Make(String)
 
-let translate (globals, stmts) = 
-    let context = L.global_context () in
-    let the_module = L.create_module context "dabor" in
-    
-    let i32_t  = L.i32_type context
-    and i8_t   = L.i8_type context
-    and i1_t   = L.i1_type context
-    and string_t = (L.pointer_type (L.i8_type context))
-    and array_t = L.array_type
-    and void_t = L.void_type context
-    in
-
+let translate (struct_field_info, globals, stmts) = 
+  let context = L.global_context () in
+  let the_module = L.create_module context "dabor" in
   
+  let i32_t  = L.i32_type context
+  and i8_t   = L.i8_type context
+  and i1_t   = L.i1_type context
+  and string_t = (L.pointer_type (L.i8_type context))
+  and array_t = L.array_type
+  and void_t = L.void_type context
+  in
+
+  let structPtrTyps = Hashtbl.create 10 in
+
   (* given type, generate size *)
-  let ltype_of_typ = function
+  let rec ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
     | A.String -> string_t
     | A.Duple -> array_t i32_t 2
     | A.Matrix(r,c) -> array_t (array_t i32_t c) r
+    | A.StructT(s_name) -> 
+      let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
+        ( match s_ptr_type with 
+        | Some (s_ptr_type) -> L.pointer_type s_ptr_type
+        | None -> let s_ptr_type = L.named_struct_type context s_name in
+                  Hashtbl.add structPtrTyps s_name s_ptr_type; (* Hashtable is mutable *)
+                  L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; 
+                  L.pointer_type s_ptr_type (* Note pointer to struct here *)
+        )
     | _ -> void_t
   in
   
@@ -39,6 +49,9 @@ let translate (globals, stmts) =
             A.String -> L.const_pointer_null (ltype_of_typ t)
           | A.Duple -> L.const_pointer_null (L.pointer_type i32_t)
           | A.Matrix(r, c) -> L.const_array (array_t i32_t c) (Array.make r (L.const_int i32_t 0))
+          | A.StructT(s_name) -> 
+              let s_fields = StringMap.find s_name struct_field_info  in
+              L.const_named_struct (ltype_of_typ t) (Array.of_list (List.map (fun f -> L.const_pointer_null (ltype_of_typ (snd f))) s_fields))
           | _ -> L.const_int (ltype_of_typ t) 0
         in
           StringMap.add n (L.define_global n init the_module) m

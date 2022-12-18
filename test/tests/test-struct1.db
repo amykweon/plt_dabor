@@ -1,0 +1,2 @@
+struct Piece {num: int};
+struct Piece pi;
