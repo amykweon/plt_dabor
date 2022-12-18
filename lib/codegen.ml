@@ -5,32 +5,72 @@ module A = Ast
 open Sast
 
 module StringMap = Map.Make(String)
-
-let translate (globals, stmts) = 
-    let context = L.global_context () in
-    let the_module = L.create_module context "dabor" in
-    
-    let i32_t  = L.i32_type context
-    and i8_t   = L.i8_type context
-    and i1_t   = L.i1_type context
-    and string_t = (L.pointer_type (L.i8_type context))
-    and array_t = L.array_type
-    and vector_t = L.struct_type context [| (L.pointer_type (L.i8_type context)); (L.i32_type context) |]
-    and void_t = L.void_type context
-    in
-
+let translate (struct_field_info, globals, stmts) = 
+  let context = L.global_context () in
+  let the_module = L.create_module context "dabor" in
   
+  let i32_t  = L.i32_type context
+  and i8_t   = L.i8_type context
+  and i1_t   = L.i1_type context
+  and string_t = (L.pointer_type (L.i8_type context))
+  and vector_t = L.struct_type context [| (L.pointer_type (L.i8_type context)); (L.i32_type context) |]
+  and array_t = L.array_type
+  and void_t = L.void_type context
+  in
+
+  let structPtrTyps = Hashtbl.create 10 in (* No longer really pointer types *)
+  let structNames = Hashtbl.create 10 in (* Mapping from struct object name to struct type name*)
+
+  let get_field_idx s_name f_name = 
+    let s_info = StringMap.find s_name struct_field_info in
+    let rec find f_name_target lst =
+      match lst with
+      [] -> raise( Failure ("Named struct field not found"))
+    | (f_name, _) :: tl -> if f_name = f_name_target then 0 else 1 + find f_name_target tl
+    in
+    find f_name s_info
+  in 
+
   (* given type, generate size *)
-  let ltype_of_typ = function
+  let rec ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
     | A.String -> string_t
     | A.Duple -> array_t i32_t 2
     | A.Matrix(r,c) -> array_t (array_t i32_t c) r
     | A.Vector -> vector_t
+    | A.StructT(s_name) -> 
+      let s_ptr_type = Hashtbl.find_opt structPtrTyps s_name in 
+        ( match s_ptr_type with 
+        | Some (s_ptr_type) -> s_ptr_type
+        | None -> let s_ptr_type = L.named_struct_type context s_name in
+                  Hashtbl.add structPtrTyps s_name s_ptr_type; (* Hashtable is mutable *)
+                  L.struct_set_body s_ptr_type (Array.of_list (List.map ltype_of_typ (List.map snd (StringMap.find s_name struct_field_info)))) false; 
+                  s_ptr_type
+        )
     | _ -> void_t
   in
-  
+
+
+(* let rec iter_struct_create = function
+          | [] -> []
+          | (f_name, f_expr) :: tl -> 
+            let e_ptr = build_expr builder f_expr in
+            let f_idx = get_field_idx s_name f_name in
+            let ll_f_idx = L.const_int i32_t f_idx in
+            let f_ptr = L.build_gep s_val [|ll_f_idx|] f_name builder in
+            llstore e_ptr f_ptr builder;
+            iter_struct_create tl
+          in
+          ignore(print_endline "About to do struct stuff");
+          ignore(iter_struct_create field_init_list); *)
+
+  let createStructFields (_, f_typ) = 
+      match f_typ with
+       A.Duple -> (L.const_pointer_null (L.pointer_type i32_t))
+      | _ -> (L.const_pointer_null (ltype_of_typ f_typ))
+  in
+
   (* Create a map of global variables after creating each *)
   let global_vars : L.llvalue StringMap.t =
   (* add struct definition *)
@@ -42,6 +82,10 @@ let translate (globals, stmts) =
           | A.Duple -> L.const_pointer_null (L.pointer_type i32_t)
           | A.Matrix(r, c) -> L.const_array (array_t i32_t c) (Array.make r (L.const_int i32_t 0))
           | A.Vector -> L.const_pointer_null (L.pointer_type (ltype_of_typ t))
+          | A.StructT(s_name) -> 
+              Hashtbl.add structNames n s_name;
+              let s_fields = StringMap.find s_name struct_field_info  in
+              L.const_named_struct (ltype_of_typ t) (Array.of_list (List.map createStructFields s_fields))
           | _ -> L.const_int (ltype_of_typ t) 0
         in
           StringMap.add n (L.define_global n init the_module) m
@@ -64,6 +108,14 @@ let translate (globals, stmts) =
     ignore ((L.string_of_llvalue store_inst));
     ()
   in
+
+  (* let llload ltyp laddr builder =
+    let ptr = L.build_pointercast laddr (L.pointer_type ltyp) "" builder in
+    let store_inst = (L.build_load ptr "" builder) in
+    store_inst
+    (* ignore ((L.string_of_llvalue store_inst));
+    () *)
+  in *)
 
 (*
 let rec ltype_of_typ = (function
@@ -114,7 +166,15 @@ let rec ltype_of_typ = (function
           let ptr = lookup id in
           let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
             L.build_load ptr_gep id builder
-      | _ -> raise( Failure ("structAccess TODO"))
+      | SStructAccess(id, f_name) ->
+          let s_name = Hashtbl.find structNames id in
+          let f_idx = get_field_idx s_name f_name in
+          let i' = L.const_int i32_t f_idx in
+          let s_ptr = lookup id in
+          let ptr_gep = L.build_gep s_ptr [|L.const_int i32_t 0; i'|] id builder in
+          (* let ltyp = ltype_of_typ tp in
+          llload ltyp ptr_gep builder *)
+          L.build_load ptr_gep id builder
 
     and build_expr builder ((_, e) : sexpr) = match e with
           SIntLit i  -> L.const_int i32_t i
@@ -258,7 +318,8 @@ let rec ltype_of_typ = (function
           let add = match i with
               SId s -> let id_add = (lookup s) in
                 let e' = build_expr builder e in
-                ignore(L.build_store e' id_add builder); e'
+                ignore(llstore e' id_add builder); e'
+                (* ignore(L.build_store e' id_add builder); e' *)
             | SDupleAccess (v, index) -> 
               let i' = L.const_int i32_t index in
               let e' = build_expr builder e in
@@ -283,10 +344,18 @@ let rec ltype_of_typ = (function
               let ptr = lookup id in
               let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
               ignore(L.build_store e' ptr_gep builder); e'
-            | _ -> raise (Failure ("TODO: not implemented yet"))
+            | SStructAccess(id, f_name) ->
+                let s_name = Hashtbl.find structNames id in
+                let f_idx = get_field_idx s_name f_name in
+                let i' = L.const_int i32_t f_idx in
+                let e' = build_expr builder e in
+                let s_ptr = lookup id in
+                let ptr_gep = L.build_gep s_ptr [|L.const_int i32_t 0; i'|] id builder in
+                ignore(llstore e' ptr_gep builder); e'
+                (* ignore(L.build_store e' ptr_gep builder); e' *)
           in add
         (*
-        | SStructCreate (s, s_l) -> raise (Failure "TODO")
+        | SVectorCreate (dir, e) -> raise (Failure "TODO")
         *)
         | SVectorCreate (dir, e) ->
           let e' = build_expr builder e in
@@ -305,6 +374,10 @@ let rec ltype_of_typ = (function
           let innerArray   = List.map Array.of_list lists in
           let list2array  = Array.of_list ((List.map (L.const_array i32_t) innerArray)) in
             L.const_array (array_t i32_t (List.length (List.hd int_list))) list2array
+        | SStructCreate (s_name, _) ->
+          let s_fields = StringMap.find s_name struct_field_info  in
+          L.const_named_struct (ltype_of_typ (A.StructT(s_name))) (Array.of_list (List.map createStructFields s_fields))
+          (* L.const_named_struct (ltype_of_typ (A.StructT(s_name))) (Array.of_list (List.map (fun f -> L.const_pointer_null (ltype_of_typ (snd f))) s_fields)) *)
         | SDupleCreate (i1, i2) ->
           let int1 = build_expr builder i1 in
           let int2 = build_expr builder i2 in

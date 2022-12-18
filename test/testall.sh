@@ -183,7 +183,8 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-duple_*.db"
+    files="tests/test-*.db tests/fail-*.db"
+    # files="tests/test-struct*.db"
 fi
 
 echo "files:"
