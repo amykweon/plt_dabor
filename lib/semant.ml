@@ -110,13 +110,16 @@ let check (program: program) =
           s_f_name = o_f_name && s_f_type = o_f_type
         in
         let s_info = get_struct_info struct_name in
+        if List.length s_info != List.length fields then
+          raise (Failure "number of given struct creation fields don't match desired number of fields")
+        else
         let correct_entries = List.map2 check_struct_object_creation s_info fields in
         let x = List.fold_left (fun x y -> x && y) true correct_entries in
           match x with 
             | true -> 
               let sfields = List.map (fun (name, field) -> let sfield = check_expr field in (name, sfield)) fields in
               (StructT(struct_name), SStructCreate(struct_name, sfields))
-            | _ -> raise (Failure ("struct object fields don't match struct type"))
+            | _ -> raise (Failure ("struct object creation names or types don't match desired fields"))
       )
       | Assign(id, e) -> 
         let (r_ty, _) as s_expr = check_expr e in
