@@ -1,0 +1,6 @@
+struct Piece {x: int};
+struct Piece pi;
+int y;
+
+pi = Piece{x: 10};
+y = pi.y;

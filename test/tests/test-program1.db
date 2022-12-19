@@ -1,0 +1,35 @@
+matrix[3][3] board;
+struct Player {points: int, num_pieces: int, location: duple};
+struct Player p;
+vector vector_1;
+vector vector_2;
+duple loc;
+int x;
+
+board = matrix_create([[0, 1, 0],[1, 0, 1],[0, 1, 0]]);
+loc = (1, 0);
+
+p = Player {points: 0, num_pieces: 4, location: loc};
+
+x = 1;
+
+vector_1 = <0, -1>;
+vector_2 = <x, x>;
+
+if (p.points == 0){
+    vector_1 = vector_1 + vector_2;
+} else{
+    vector_1 = vector_1 - vector_2;
+}
+
+print_matrix board;
+x = board[p.location];
+board[p.location] = 0;
+p.location = p.location move vector_1;
+board[p.location] = x;
+print_matrix board;
+
+
+
+
+

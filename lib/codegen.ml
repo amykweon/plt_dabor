@@ -107,7 +107,7 @@ let translate (struct_field_info, globals, stmts) =
     let lookup n = StringMap.find n global_vars in
     
     (* IdRule implementation *)
-    let rec build_idrule builder ((_, i): sid_typ) = match i with
+    let rec build_idrule builder ((tp, i): sid_typ) = match i with
         SId s     -> L.build_load (lookup s) s builder
       | SDupleAccess (v, index) ->
         let i' = L.const_int i32_t index in
@@ -130,16 +130,22 @@ let translate (struct_field_info, globals, stmts) =
           let j' = L.build_load v'_jptr "j" builder in
           let ptr = lookup id in
           let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
-            L.build_load ptr_gep id builder
+          L.build_load ptr_gep id builder
       | SStructAccess(id, f_name) ->
           let s_name = Hashtbl.find structNames id in
           let f_idx = get_field_idx s_name f_name in
           let i' = L.const_int i32_t f_idx in
           let s_ptr = lookup id in
           let ptr_gep = L.build_gep s_ptr [|L.const_int i32_t 0; i'|] id builder in
-          (* let ltyp = ltype_of_typ tp in
-          llload ltyp ptr_gep builder *)
-          L.build_load ptr_gep id builder
+          match tp with
+          A.Duple ->
+            let v' = L.build_load ptr_gep id builder in
+            let duple_tmp_add = L.define_global "" (L.const_pointer_null ((L.pointer_type i32_t))) the_module in 
+            ignore(llstore v' duple_tmp_add builder);
+            L.build_load duple_tmp_add "" builder
+          | _ ->
+            L.build_load ptr_gep id builder
+          
 
     and build_expr builder ((_, e) : sexpr) = match e with
           SIntLit i  -> L.const_int i32_t i
@@ -339,7 +345,7 @@ let translate (struct_field_info, globals, stmts) =
           | _ -> raise (Failure "print_matrix only supports matrix type")
           in print_inst
         | SPrintDup (id) -> 
-            let dr_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 0|] "" builder in
+            let dr_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 0|] "" builder in (*L.build_in_bounds_gep*)
             let dr = L.build_load dr_gep "" builder in
             let dc_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 1|] "" builder in
             let dc = L.build_load dc_gep "" builder in
