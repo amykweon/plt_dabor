@@ -156,13 +156,21 @@ let rec ltype_of_typ = (function
             L.build_load ptr_gep id builder
       | SIndexAccessVar (id, var) ->
           let v' = build_idrule builder var in
+          ignore(print_endline "build id rule");
+          let v' = L.build_pointercast v' (L.pointer_type (ltype_of_typ A.Duple)) "" builder in
+          ignore(print_endline "cast pointer");
           let v'_iptr = L.build_in_bounds_gep v' [|L.const_int i32_t 0|] "" builder in
+          ignore(print_endline "got i pointer");
           let i' = L.build_load v'_iptr "i" builder in
+          ignore(print_endline "got i element");
           let v'_jptr = L.build_in_bounds_gep v' [|L.const_int i32_t 1|] "" builder in
+          ignore(print_endline "got j pointer");
           let j' = L.build_load v'_jptr "j" builder in
+          ignore(print_endline "got j element");
           let ptr = lookup id in
           let ptr_gep = L.build_gep ptr [|L.const_int i32_t 0; i'; j'|] id builder in
-            L.build_load ptr_gep id builder
+          ignore(print_endline "got matrix pointer");
+          L.build_load ptr_gep id builder
       | SStructAccess(id, f_name) ->
           let s_name = Hashtbl.find structNames id in
           let f_idx = get_field_idx s_name f_name in
@@ -371,7 +379,7 @@ let rec ltype_of_typ = (function
           | _ -> raise (Failure "print_matrix only supports matrix type")
           in print_inst
         | SPrintDup (id) -> 
-            let dr_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 0|] "" builder in
+            let dr_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 0|] "" builder in (*L.build_in_bounds_gep*)
             let dr = L.build_load dr_gep "" builder in
             let dc_gep = L.build_in_bounds_gep (build_expr builder id) [|L.const_int i32_t 1|] "" builder in
             let dc = L.build_load dc_gep "" builder in

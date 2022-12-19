@@ -27,7 +27,7 @@ rm -f $globallog
 error=0
 globalerror=0
 
-keep=0
+keep=1
 
 Usage() {
     echo "Usage: testall.sh [options] [.db files]"
@@ -181,7 +181,8 @@ if [ $# -ge 1 ]
 then
     files=$@
 else
-    files="tests/test-*.db tests/fail-*.db"
+    # files="tests/test-*.db tests/fail-*.db"
+    files="tests/test-struct6.db tests/test-struct7.db"
 fi
 
 echo "files:"

@@ -1,0 +1,15 @@
+struct Piece {loc: duple};
+struct Piece pi;
+duple target;
+matrix [2][2] x;
+int y;
+
+x = matrix_create ([[1, 2], [3, 4]]);
+target = (1, 1);
+pi = Piece{loc: target};
+
+y = x[pi.loc];
+print_int y;
+
+
+
