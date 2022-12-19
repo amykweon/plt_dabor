@@ -30,3 +30,5 @@ to run test files, run
 ```
 dune runtest
 ```
+if dune runtest is outputing lli or llc error, update path of lli and llc according to the local machine path in test/testall.sh.
+if dune runtest encounters permission error, update test/testall.sh permission with `chmod +x test/testall.sh` command.
