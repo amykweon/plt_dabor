@@ -23,17 +23,11 @@ let check (program: program) =
     | _ -> map
   in
   let symbols = List.fold_left symbol_handler StringMap.empty vdecls in
-  (* let matrix_info = StringMap.empty in *)
 
   let type_of_identifier s =
     try StringMap.find s symbols
     with Not_found -> raise (Failure ("undeclared identifier " ^ s))
   in
-  (* (* Raise an exception if the given rvalue type cannot be assigned to
-       the given lvalue type *)
-  let check_assign lvaluet rvaluet err =
-    if lvaluet = rvaluet then lvaluet else raise (Failure err)
-  in *)
 
   let get_struct_info s_name =
     try StringMap.find s_name struct_field_info
