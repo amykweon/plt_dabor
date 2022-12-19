@@ -1,0 +1,21 @@
+matrix[5][5] board;
+struct Player {points: int, moves_left: int, loc: duple};
+struct Player p;
+duple start;
+vector dir;
+
+start = (0, 0);
+p = Player {points: 0, moves_left: 5, loc: start};
+
+board = matrix_create([[1, 0, 0, 0, 0],[0, 2, 0, 0, 0],[0, 0, 3, 0, 0], [0, 0, 0, 4, 0], [0, 0, 0, 0, 5]]);
+
+dir = <1, 1>;
+
+while (p.moves_left > 0) {
+    p.points = p.points + board[p.loc];
+    p.loc = p.loc move dir;
+    p.moves_left = p.moves_left - 1;
+}
+
+print_int p.points;
+
