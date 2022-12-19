@@ -1,7 +1,8 @@
 # dabor
 
 ## What is dabor?
-TODO: Description here
+Our proposed language, Dabor, aims to offer programmers an intuitive and efficient means of creating board games. This language will provide flexibility to create not only a conventional board game, such as Checkers but also user-customized games with new rules.
+
 ## Project Directory Structure
 The project is separated into the following directories, managed by the [dune](https://dune.build/) build system:
 
@@ -29,20 +30,5 @@ to run test files, run
 ```
 dune runtest
 ```
-
-## Credit
-Seoyoung Kweon:
-- basic implementation of parser.mly, scanner.mll
-- basic implementation of ast.ml, sast.ml
-- implement (struct, vector) in parser.mly, ast.ml, sast.ml
-
-Nicholas Greenspan:
-- basic implementation of semant.ml, test.ml
-- contributed to ast.ml and sast.ml
-
-Annie Song:
-- debugging on compilation error of basic parser.mly, scanner.mll, ast.ml
-- general system (compilation code) for code testing
-
-Khaela Harrod:
-- implementation of codegen.ml
+- if dune runtest is outputing lli or llc error, update path of lli and llc according to the local machine path in test/testall.sh.
+- if dune runtest encounters permission error, update test/testall.sh permission with `chmod +x test/testall.sh` command.

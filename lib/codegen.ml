@@ -404,7 +404,6 @@ let translate (struct_field_info, globals, stmts) =
                 let s_ptr = lookup id in
                 let ptr_gep = L.build_gep s_ptr [|L.const_int i32_t 0; i'|] id builder in
                 ignore(llstore e' ptr_gep builder); e'
-                (* ignore(L.build_store e' ptr_gep builder); e' *)
           in add
         | SVectorCreate (i1, i2) ->
           let int1 = build_expr builder i1 in
