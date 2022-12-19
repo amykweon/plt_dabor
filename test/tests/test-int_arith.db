@@ -7,26 +7,26 @@ y = 1;
 
 // PLUS
 z = x + y;
-print_int z;
+print_int (z);
 
 // MINUS
 z = z - x;
-print_int z;
+print_int (z);
 
 // MULTIPLY
 x = 3;
 y = 2;
 z = x * y;
-print_int z;
+print_int (z);
 
 // Mod
 x = 4;
 y = 2;
 z = x % y;
-print_int z;
+print_int (z);
 
 // Neg
 x = 1;
 y = -1;
 z = x + y;
-print_int z;
+print_int (z);

@@ -1,4 +1,4 @@
 int x;
 x = 10;
 
-print_string x;
+print_string (x);

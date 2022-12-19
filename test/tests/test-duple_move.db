@@ -5,4 +5,4 @@ x = (1, 1);
 y = <0, 1>;
 
 x = x move y;
-print_duple x;
+print_duple (x);

@@ -15,5 +15,5 @@ pi = Piece {x: a, y: 10, loc1: target, loc2: (9, 5)};
 b = pi.y;
 target2 = pi.loc2;
 
-print_int b;
-print_duple target2;
+print_int (b);
+print_duple (target2);

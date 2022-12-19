@@ -1,4 +1,4 @@
 vector x;
 
 x = <1, 1>;
-print_vector x;
+print_vector (x);

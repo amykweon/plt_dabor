@@ -1,7 +1,7 @@
 string s;
 
 s = "hello";
-print_string s;
+print_string (s);
 
 s = "world";
-print_string s;
+print_string (s);

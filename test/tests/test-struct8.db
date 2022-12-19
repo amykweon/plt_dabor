@@ -4,11 +4,11 @@ vector y;
 
 
 pi = Piece{loc: (10, 4)};
-print_duple pi.loc;
+print_duple (pi.loc);
 
 y = <0, 1>;
 
 pi.loc = pi.loc move y;
 
-print_duple pi.loc;
+print_duple (pi.loc);
 

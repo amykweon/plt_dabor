@@ -9,11 +9,11 @@ pi.loc = (10, 4);
 t = pi.loc;
 x = pi.num;
 
-print_int t[0];
-print_int x;
+print_int (t[0]);
+print_int (x);
 
 y = 1;
 pi.num = y;
 
-print_int pi.num;
+print_int (pi.num);
 

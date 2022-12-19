@@ -114,8 +114,8 @@ expr_rule:
  | ID LBRACE struct_list RBRACE          { StructCreate($1, $3) }
  | MATRIX_C LPAREN matrix_rule RPAREN    { MatrixCreate($3) }
  | LPAREN expr_rule COMMA expr_rule RPAREN    { DupleCreate($2, $4) }
- | PRINTI expr_rule                    { PrintInt($2) }
- | PRINTS expr_rule                    { PrintStr($2) }
- | PRINTM id_rule                      { PrintMat($2) }
- | PRINTD expr_rule                    { PrintDup($2) }
- | PRINTV expr_rule                    { PrintVec($2) }
+ | PRINTI LPAREN expr_rule RPAREN      { PrintInt($3) }
+ | PRINTS LPAREN expr_rule RPAREN      { PrintStr($3) }
+ | PRINTM LPAREN id_rule RPAREN        { PrintMat($3) }
+ | PRINTD LPAREN expr_rule RPAREN      { PrintDup($3) }
+ | PRINTV LPAREN expr_rule RPAREN      { PrintVec($3) }

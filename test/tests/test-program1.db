@@ -22,12 +22,12 @@ if (p.points == 0){
     vector_1 = vector_1 - vector_2;
 }
 
-print_matrix board;
+print_matrix (board);
 x = board[p.location];
 board[p.location] = 0;
 p.location = p.location move vector_1;
 board[p.location] = x;
-print_matrix board;
+print_matrix (board);
 
 
 

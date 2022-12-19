@@ -4,4 +4,4 @@ int x;
 
 x = 7;
 pi.num = x;
-print_int pi.num;
+print_int (pi.num);

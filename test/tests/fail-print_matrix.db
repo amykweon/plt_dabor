@@ -1,4 +1,4 @@
 int x;
 
 x = 10;
-print_matrix x;
+print_matrix (x);

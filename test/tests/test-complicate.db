@@ -27,10 +27,10 @@ if (p.points == 0){
 
 loc = p.location;
 x = board[loc];
-print_matrix board;
+print_matrix (board);
 
 board[loc] = 0;
 loc = loc move vector_1;
 p.location = loc;
 board[loc] = x;
-print_matrix board;
+print_matrix (board);

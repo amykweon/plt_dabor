@@ -3,15 +3,15 @@ bool x;
 x = true;
 
 if (x) {
-	print_int 1;
+	print_int (1);
 } else {
-	print_int 0;
+	print_int (0);
 }
 
 x = false;
 
 if (x) {
-	print_int 0;
+	print_int (0);
 } else {
-	print_int 1;
+	print_int (1);
 }

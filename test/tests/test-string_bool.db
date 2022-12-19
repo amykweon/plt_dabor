@@ -5,5 +5,5 @@ x = "hello";
 y = "hello";
 
 if (x == y) {
-	print_int 1;
+	print_int (1);
 }
